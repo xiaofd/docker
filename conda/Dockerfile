@@ -9,7 +9,7 @@ MAINTAINER xiaofd <xiaofd@jun.ac.cn>
 # install ubuntu sshd
 RUN apt-get update && \
 	apt-get clean  && \
-	apt-get install -y openssh-server wget  --no-install-recommends && \
+	apt-get install -y openssh-server wget tmux --no-install-recommends && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 	
@@ -31,6 +31,7 @@ ENV PATH=/opt/conda/bin:$PATH
 RUN pip install -U pip requests redis
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
+  echo 'wget -O run.py "$PYFILE"' >> run.sh && \
   echo 'tmux new-session -d "python run.py 2>&1"' >> run.sh && \
   #echo '/etc/init.d/ssh stop &' >> run.sh && \
   echo "/usr/sbin/sshd -D" >> run.sh && \
