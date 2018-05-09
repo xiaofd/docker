@@ -12,6 +12,7 @@ COPY onesmtp.py oneweb.py /root/
 
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
+  echo 'service redis-server restart' >> run.sh && \
   echo 'python3 oneweb.py' >> run.sh && \
   chmod +x run.sh
 
