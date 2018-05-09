@@ -12,7 +12,7 @@ COPY onestmp.py oneweb.py /root
 
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
-  echo 'python3 oneweb.py' >> run.sh
+  echo 'python3 oneweb.py' >> run.sh && \
   chmod +x run.sh
 
 EXPOSE 25 80
