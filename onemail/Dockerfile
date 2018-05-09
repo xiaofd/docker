@@ -8,7 +8,7 @@ RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-COPY onesmtp.py oneweb.py /root
+COPY onesmtp.py oneweb.py /root/
 
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
