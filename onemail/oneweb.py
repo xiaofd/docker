@@ -30,5 +30,5 @@ def allow_ajax(res):
     return response
 
 if __name__ == '__main__':
-    os.system('python3 onestmp.py &')
+    os.system('python3 /root/onestmp.py &')
     app.run(host='0.0.0.0',port=80,use_debugger=False,threaded=True)
