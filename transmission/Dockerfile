@@ -30,7 +30,7 @@ RUN apt-get update && \
 
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
-  echo 'bash transmission.sh -u $USER -p $PASS' >> run.sh && \
+  echo 'bash /root/transmission.sh -u $USER -p $PASS' >> run.sh && \
   echo 'service transmission-daemon start' >> run.sh && \
   echo "/usr/sbin/sshd -D" >> run.sh && \
   chmod +x run.sh
