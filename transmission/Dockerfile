@@ -24,12 +24,13 @@ ENV PASS=xiaofd.win
 # install 
 RUN apt-get update && \
 	apt-get clean  && \
-        wget --no-check-certificate xiaofd.github.io/transmission.sh && bash transmission.sh -u $USER -p $PASS && \
+        wget --no-check-certificate -O /root/transmission.sh xiaofd.github.io/transmission.sh && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 
 RUN cd /root && \
   echo "#!/bin/bash" > run.sh && \
+  echo 'bash transmission.sh -u $USER -p $PASS' >> run.sh && \
   echo 'service transmission-daemon start' >> run.sh && \
   echo "/usr/sbin/sshd -D" >> run.sh && \
   chmod +x run.sh
