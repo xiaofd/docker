@@ -3,7 +3,7 @@ MAINTAINER xiaofd <xiaofd@jun.ac.cn>
 
 RUN sed -i "s/^exit 101$/exit 0/" /usr/sbin/policy-rc.d && \
     apt-get update && apt-get install -y curl wget git nginx php php-fpm php-curl cron && \
-    wget -O /etc/nginx/sites-available/default xiaofd.github.io/nginx-php && \
+    wget -O /etc/nginx/sites-available/default xiaofd.github.io/others/nginx-php && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
