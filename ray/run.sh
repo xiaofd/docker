@@ -11,7 +11,7 @@ apk add --no-cache jq libqrencode curl openssl
 echo -n "Enter Domain:"
 read ray_domain
 UUID=$(cat /proc/sys/kernel/random/uuid)
-WS_PATH=$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))
+WS_PATH='\'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'\'
 PORT=443
 
 curl -L https://get.acme.sh | sh
