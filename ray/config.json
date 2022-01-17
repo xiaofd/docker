@@ -41,10 +41,6 @@
           "minVersion": "1.2",
           "certificates": [
             {
-              "certificateFile": "/etc/xray/self_signed_cert.pem",
-              "keyFile": "/etc/xray/self_signed_key.pem"
-            },
-            {
               "certificateFile": "/etc/xray/xray.crt",
               "keyFile": "/etc/xray/xray.key"
             }
