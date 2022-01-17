@@ -43,13 +43,13 @@ WS_PATH_WITHOUT_SLASH=$(echo $WS_PATH | tr -d '/')
 DOMAIN=${ray_domain}
 
 echo "URL 链接 (VLESS + TCP + TLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS_wulabing-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS_wulabing-$DOMAIN" | qrencode -o- -t UTF8
+echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN"
+echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN" | qrencode -o- -t UTF8
 echo "URL 链接 (VLESS + TCP + XTLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS_wulabing-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS_wulabing-$DOMAIN" | qrencode -o- -t UTF8
+echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN"
+echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN" | qrencode -o- -t UTF8
 echo "URL 链接 (VLESS + WebSocket + TLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS_wulabing-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS_wulabing-$DOMAIN" | qrencode -o- -t UTF8
+echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS-$DOMAIN"
+echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS-$DOMAIN" | qrencode -o- -t UTF8
 
 "$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
