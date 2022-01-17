@@ -16,7 +16,8 @@ PORT=443
 curl -L https://get.acme.sh | sh
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 # can not use
-[[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
+# [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
+[[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
 [[ -n $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --dns dns_cf -k ec-256 --force
 "$HOME"/.acme.sh/acme.sh --installcert -d "$ray_domain" --fullchainpath ${xray_conf_dir}/xray.crt --keypath ${xray_conf_dir}/xray.key
 
