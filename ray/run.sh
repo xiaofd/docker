@@ -13,7 +13,7 @@ UUID=$(cat /proc/sys/kernel/random/uuid)
 WS_PATH=$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))
 PORT=443
 
-curl -L https://get.acme.sh | bash
+curl -L https://get.acme.sh | sh
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 # can not use
 [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
