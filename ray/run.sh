@@ -1,3 +1,4 @@
+xray_conf_dir="/etc/xray"
 cp /bin/xray "$xray_conf_dir"/
 cp /bin/config.json "$xray_conf_dir"/
 
@@ -6,7 +7,6 @@ cp /bin/config.json "$xray_conf_dir"/
 # echo "12345645gsdfgsdfsdf" | qrencode -o- -l H -t UTF8
 apk add --no-cache jq libqrencode curl openssl
 
-xray_conf_dir="/etc/xray"
 echo -n "Enter Domain:"
 read ray_domain
 UUID=$(cat /proc/sys/kernel/random/uuid)
