@@ -1,4 +1,5 @@
-cp /bin/xray "$xray_conf_dir"/xray
+cp /bin/xray "$xray_conf_dir"/
+cp /bin/config.json "$xray_conf_dir"/
 
 # qrencode -l H 参数 可以纠错，生成图片稍大
 # qrencode -o- -l H "12345645gsdfgsdfsdf" -t UTF8
