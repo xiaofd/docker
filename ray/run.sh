@@ -4,7 +4,7 @@ cp /bin/config.json "$xray_conf_dir"/
 # qrencode -l H 参数 可以纠错，生成图片稍大
 # qrencode -o- -l H "12345645gsdfgsdfsdf" -t UTF8
 # echo "12345645gsdfgsdfsdf" | qrencode -o- -l H -t UTF8
-apk add --no-cache jq libqrencode curl
+apk add --no-cache jq libqrencode curl openssl
 
 xray_conf_dir="/etc/xray"
 echo -n "Enter Domain:"
