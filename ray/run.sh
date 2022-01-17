@@ -1,5 +1,5 @@
-echo -n "Enter Domain:"
-read ray_domain
+[[ -z $CF_Domain ]] && echo -n "Enter Domain:" && read CF_Domain
+[[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
 
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
@@ -20,12 +20,11 @@ curl -L https://get.acme.sh | sh
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server zerossl
 "$HOME"/.acme.sh/acme.sh --register-account -m admin@google.com
 # can not use
-# [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
-[[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
-[[ -n $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --dns dns_cf -k ec-256 --force
-"$HOME"/.acme.sh/acme.sh --installcert --ecc -d "${ray_domain}" --fullchainpath "${xray_conf_dir}"/xray.crt --keypath "${xray_conf_dir}"/xray.key
-# cp "$HOME"/.acme.sh/"${ray_domain}*"/fullchain.cer "${xray_conf_dir}"/xray.crt
-# cp "$HOME"/.acme.sh/"${ray_domain}*"/"${ray_domain}".key "${xray_conf_dir}"/xray.key
+# [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${CF_Domain}" --webroot "$website_dir" -k ec-256 --force
+[[ -n $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${CF_Domain}" --dns dns_cf -k ec-256 --force
+"$HOME"/.acme.sh/acme.sh --installcert --ecc -d "${CF_Domain}" --fullchainpath "${xray_conf_dir}"/xray.crt --keypath "${xray_conf_dir}"/xray.key
+# cp "$HOME"/.acme.sh/"${CF_Domain}*"/fullchain.cer "${xray_conf_dir}"/xray.crt
+# cp "$HOME"/.acme.sh/"${CF_Domain}*"/"${CF_Domain}".key "${xray_conf_dir}"/xray.key
 
 
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
@@ -44,7 +43,7 @@ PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
 FLOW=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].flow | tr -d '"')
 WS_PATH=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.fallbacks[2].path | tr -d '"')
 WS_PATH_WITHOUT_SLASH=$(echo $WS_PATH | tr -d '/')
-DOMAIN=${ray_domain}
+DOMAIN=${CF_Domain}
 
 echo "URL 链接 (VLESS + TCP + TLS)"
 echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN"
