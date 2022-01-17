@@ -1,3 +1,6 @@
+echo -n "Enter Domain:"
+read ray_domain
+
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
 cp /bin/xray "$xray_conf_dir"/
@@ -8,8 +11,6 @@ cp /bin/config.json "$xray_conf_dir"/
 # echo "12345645gsdfgsdfsdf" | qrencode -o- -l H -t UTF8
 apk add --no-cache jq libqrencode curl openssl
 
-echo -n "Enter Domain:"
-read ray_domain
 UUID=$(cat /proc/sys/kernel/random/uuid)
 WS_PATH='/'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'/'
 PORT=443
