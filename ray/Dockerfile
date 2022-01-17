@@ -17,5 +17,6 @@ VOLUME /etc/xray
 ENV TZ=Asia/Shanghai
 #CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
 COPY run.sh /bin/
+COPY config.json /bin/
 ENV CF_Token=""
 CMD ["/bin/sh","/bin/run.sh"] 
