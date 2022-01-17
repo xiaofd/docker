@@ -15,4 +15,7 @@ FROM alpine
 COPY --from=build /src/Xray-core/xray /bin
 VOLUME /etc/xray
 ENV TZ=Asia/Shanghai
-CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
+#CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
+COPY run.sh /bin/
+ENV CF_Token=""
+CMD ["/bin/sh","/bin/run.sh"] 
