@@ -21,11 +21,16 @@ curl -L https://get.acme.sh | sh
 [[ -n $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --dns dns_cf -k ec-256 --force
 "$HOME"/.acme.sh/acme.sh --installcert -d "$ray_domain" --fullchainpath ${xray_conf_dir}/xray.crt --keypath ${xray_conf_dir}/xray.key
 
-cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
-cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
-cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
-cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
-
+#cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
+#cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
+#cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
+#cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
+cat ${xray_conf_dir}/config.json | 
+jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' | 
+jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' | 
+jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' | 
+jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config_temp.json
+mv ${xray_conf_dir}/config_temp.json ${xray_conf_dir}/config.json
 
 UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
 PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
