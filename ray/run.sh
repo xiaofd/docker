@@ -1,4 +1,5 @@
 xray_conf_dir="/etc/xray"
+mkdir -p "$xray_conf_dir"
 cp /bin/xray "$xray_conf_dir"/
 cp /bin/config.json "$xray_conf_dir"/
 
