@@ -53,3 +53,5 @@ echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT
 echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS-$DOMAIN" | qrencode -o- -t UTF8
 
 "$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
+
+/bin/sh
