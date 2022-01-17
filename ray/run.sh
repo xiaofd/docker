@@ -49,4 +49,4 @@ echo "URL 链接 (VLESS + WebSocket + TLS)"
 echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS_wulabing-$DOMAIN"
 echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS_wulabing-$DOMAIN" | qrencode -o- -t UTF8
 
-/etc/xray/xray --config config.json
+"$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
