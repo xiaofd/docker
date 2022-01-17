@@ -6,7 +6,8 @@
 FROM --platform= golang:1.17-alpine AS build
 WORKDIR /src
 RUN apk add git gcc g++
-RUN git clone https://github.com/XTLS/Xray-core
+COPY Xray-core-1.5.2/ Xray-core/
+#RUN git clone https://github.com/XTLS/Xray-core
 WORKDIR /src/Xray-core
 ARG TARGETOS TARGETARCH
 RUN GOOS= GOARCH= go build -o xray -trimpath -ldflags "-s -w -buildid=" ./main
