@@ -22,9 +22,9 @@ curl -L https://get.acme.sh | sh
 # [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
 [[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
 [[ -n $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --dns dns_cf -k ec-256 --force
-# "$HOME"/.acme.sh/acme.sh --installcert -d "${ray_domain}" --fullchainpath "${xray_conf_dir}"/xray.crt --keypath "${xray_conf_dir}"/xray.key
-cp "$HOME"/.acme.sh/"${ray_domain}*"/fullchain.cer "${xray_conf_dir}"/xray.crt
-cp "$HOME"/.acme.sh/"${ray_domain}*"/"${ray_domain}".key "${xray_conf_dir}"/xray.key
+"$HOME"/.acme.sh/acme.sh --installcert --ecc -d "${ray_domain}" --fullchainpath "${xray_conf_dir}"/xray.crt --keypath "${xray_conf_dir}"/xray.key
+# cp "$HOME"/.acme.sh/"${ray_domain}*"/fullchain.cer "${xray_conf_dir}"/xray.crt
+# cp "$HOME"/.acme.sh/"${ray_domain}*"/"${ray_domain}".key "${xray_conf_dir}"/xray.key
 
 
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
