@@ -16,7 +16,7 @@ PORT=443
 curl -L https://get.acme.sh | sh
 # "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server zerossl
-"$HOME"/.acme.sh/acme.sh --register-account -m admin@baidu.com
+"$HOME"/.acme.sh/acme.sh --register-account -m admin@google.com
 # can not use
 # [[ -z $CF_Token ]] && "$HOME"/.acme.sh/acme.sh --issue -d "${ray_domain}" --webroot "$website_dir" -k ec-256 --force
 [[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
