@@ -1,0 +1,15 @@
+rclone mount \
+--buffer-size 512M \
+--low-level-retries 200 \
+--vfs-read-chunk-size 512M \
+--cache-dir /var/rclone \
+--copy-links \
+--no-gzip-encoding \
+--no-check-certificate \
+--allow-other \
+--allow-non-empty \
+--daemon \
+--vfs-cache-mode writes \
+--poll-interval 5s \
+--vfs-cache-max-age 3h \
+pt:/ /var/lib/transmission-daemon/downloads
