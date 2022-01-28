@@ -30,7 +30,7 @@ curl -L https://get.acme.sh | sh
 # cp "$HOME"/.acme.sh/"${CF_Domain}*"/"${CF_Domain}".key "${xray_conf_dir}"/xray.key
 fi
 
-if [[ -n $config_new ]];then
+if [[ -z $config_new ]];then
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
