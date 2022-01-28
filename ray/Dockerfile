@@ -9,7 +9,7 @@ RUN apk add git gcc g++
 RUN git clone https://github.com/XTLS/Xray-core
 WORKDIR /src/Xray-core
 ARG TARGETOS TARGETARCH
-RUN GOOS= GOARCH= go build -o xray -trimpath -ldflags "-s -w -buildid=" ./main
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o xray -trimpath -ldflags "-s -w -buildid=" ./main
 
 FROM alpine
 COPY --from=build /src/Xray-core/xray /bin

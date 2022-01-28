@@ -3,8 +3,10 @@
 
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
-cp /bin/xray "$xray_conf_dir"/
-cp /bin/config.json "$xray_conf_dir"/
+[[ ! -f "$xray_conf_dir"/xray ]] && cp /bin/xray "$xray_conf_dir"/ \
+&& wget -O "$xray_conf_dir"/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat \
+&& wget -O "$xray_conf_dir"/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
+[[ ! -f "$xray_conf_dir"/config.json ]] && cp /bin/config.json "$xray_conf_dir"/ && config_new="true"
 
 # qrencode -l H 参数 可以纠错，生成图片稍大
 # qrencode -o- -l H "12345645gsdfgsdfsdf" -t UTF8
@@ -15,6 +17,7 @@ UUID=$(cat /proc/sys/kernel/random/uuid)
 WS_PATH='/'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'/'
 PORT=443
 
+if [[ ! -f "$xray_conf_dir"/xray.crt ]];then
 curl -L https://get.acme.sh | sh
 # "$HOME"/.acme.sh/acme.sh --set-default-ca --server letsencrypt
 "$HOME"/.acme.sh/acme.sh --set-default-ca --server zerossl
@@ -25,8 +28,9 @@ curl -L https://get.acme.sh | sh
 "$HOME"/.acme.sh/acme.sh --installcert --ecc -d "${CF_Domain}" --fullchainpath "${xray_conf_dir}"/xray.crt --keypath "${xray_conf_dir}"/xray.key
 # cp "$HOME"/.acme.sh/"${CF_Domain}*"/fullchain.cer "${xray_conf_dir}"/xray.crt
 # cp "$HOME"/.acme.sh/"${CF_Domain}*"/"${CF_Domain}".key "${xray_conf_dir}"/xray.key
+fi
 
-
+if [[ -n $config_new ]];then
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' >${xray_conf_dir}/config.json
 #cat ${xray_conf_dir}/config.json | jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' >${xray_conf_dir}/config.json
@@ -37,6 +41,7 @@ jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' |
 jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' | 
 jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config_temp.json
 mv ${xray_conf_dir}/config_temp.json ${xray_conf_dir}/config.json
+fi
 
 UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
 PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
