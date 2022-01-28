@@ -1,7 +1,4 @@
-# ubuntu_python3_redis_requests
-# download a py file and run
 # docker run -it -p 9091:9091 -e USER=xiaofd -e PASS=xiaofd.win xiaofd/transmission
-# export ENV PYFILE
 
 FROM ubuntu:16.04
 MAINTAINER xiaofd <xiaofd@jun.ac.cn>
