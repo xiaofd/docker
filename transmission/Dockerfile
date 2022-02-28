@@ -6,7 +6,8 @@ MAINTAINER xiaofd <xiaofd@jun.ac.cn>
 # install ubuntu sshd
 RUN apt-get update && \
 	apt-get clean  && \
-	apt-get install -y openssh-server wget dpkg --no-install-recommends && \
+        apt-get install -y apt-utils && \
+	apt-get install -y openssh-server wget dpkg apt-utils --no-install-recommends && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 	
