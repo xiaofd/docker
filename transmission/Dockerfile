@@ -1,4 +1,4 @@
-# docker run -it -p 9091:9091 -e USER=xiaofd -e PASS=xiaofd.win xiaofd/transmission
+# docker run -it -p 9091:9091 -p 51413:51413 -e USER=xiaofd -e PASS=xiaofd.win xiaofd/transmission
 
 FROM ubuntu:16.04
 MAINTAINER xiaofd <xiaofd@jun.ac.cn>
@@ -6,7 +6,7 @@ MAINTAINER xiaofd <xiaofd@jun.ac.cn>
 # install ubuntu sshd
 RUN apt-get update && \
 	apt-get clean  && \
-	apt-get install -y openssh-server wget  --no-install-recommends && \
+	apt-get install -y openssh-server wget dpkg --no-install-recommends && \
 	apt-get clean && \
 	rm -rf /var/lib/apt/lists/*
 	
@@ -32,6 +32,6 @@ RUN cd /root && \
   echo "/usr/sbin/sshd -D" >> run.sh && \
   chmod +x run.sh
 
-EXPOSE 22 9091
+EXPOSE 22 9091 51413
 
 CMD    ["/root/run.sh"]
