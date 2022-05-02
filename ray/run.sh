@@ -1,5 +1,5 @@
 [[ -z $CF_Domain ]] && echo -n "Enter Domain:" && read CF_Domain
-[[ -z $CF_Token ]] && echo "CF_Token:" && read CF_Token
+[[ -z $CF_Token ]] && echo -n "CF_Token:" && read CF_Token
 
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
