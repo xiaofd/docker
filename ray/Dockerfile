@@ -1,9 +1,10 @@
 # build local
-# docker build -f Dockerfile -t xiaofd/ray .
+# docker build -f Dockerfile -t xiaofd/ray  --network=host .
 # multiplatform
 # docker buildx create --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 --use 
 # docker buildx build -f Dockerfile -t xiaofd/ray --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 -o type=registry .
 FROM --platform= golang:1.17-alpine AS build
+#FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS build
 WORKDIR /src
 RUN apk add git gcc g++
 RUN git clone https://github.com/XTLS/Xray-core
