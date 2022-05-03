@@ -6,7 +6,8 @@
 FROM --platform= golang:1.18 AS build
 #FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS build
 WORKDIR /src
-RUN apk add git gcc g++
+#RUN apk add git gcc g++
+RUN apt install git gcc g++
 RUN git clone https://github.com/XTLS/Xray-core
 WORKDIR /src/Xray-core
 ARG TARGETOS TARGETARCH
