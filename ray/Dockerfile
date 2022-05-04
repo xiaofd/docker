@@ -15,8 +15,10 @@
 
 #FROM alpine
 #COPY --from=build /src/Xray-core/xray /bin
-FROM xiaofd/ray:base
+#FROM xiaofd/ray:base
 #FROM xiaofd/ray:base-alpine
+FROM teddysun/xray
+COPY /usr/bin/xray /bin
 VOLUME /etc/xray
 ENV TZ=Asia/Shanghai
 #CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
