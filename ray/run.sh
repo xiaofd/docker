@@ -3,7 +3,7 @@
 
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
-[[ ! -f "$xray_conf_dir"/xray ]] && cp /bin/xray "$xray_conf_dir"/ \
+[[ ! -f "$xray_conf_dir"/xray ]] && cp /bin/xrayb "$xray_conf_dir"/xray \
 && wget -O "$xray_conf_dir"/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat \
 && wget -O "$xray_conf_dir"/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
 [[ ! -f "$xray_conf_dir"/config.json ]] && cp /bin/config.json "$xray_conf_dir"/ && config_new="true"
