@@ -10,7 +10,7 @@ FROM --platform= xiaofd/ray:base AS buildb
 
 FROM ubuntu:22.04
 VOLUME /xray
-RUN apt-get update && apt-get install -y iptables sed wget curl net-tools kmod iproute2 && \
+RUN apt-get update && apt-get install -y iptables sed wget curl net-tools kmod iproute2 ipset openssl dnsmasq && \
     apt-get clean && rm -rf /var/lib/apt/lists/* && mkdir -p /xray && \
     echo "wget -O /xray/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat" >/bin/update.sh && \
     echo "wget -O /xray/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat" >>/bin/update.sh && \
