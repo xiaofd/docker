@@ -1,4 +1,5 @@
 #!/bin/bash
+
 # 开启IP转发
 ## 执行后将出现 net.ipv4.ip_forward=1 的提示
 echo net.ipv4.ip_forward=1 >> /etc/sysctl.conf && sysctl -p
@@ -53,9 +54,15 @@ iptables -t mangle -I PREROUTING -p tcp -m socket -j DIVERT
 
 sed -i "s/todoaddress/$address/g" /xray/config.json
 sed -i "s/todoid/$id/g" /xray/config.json
+if test -z "$sni" ;
+then
+	sed -i "s/todosni/$address/g" /xray/config.json
+else
+	sed -i "s/todosni/$sni/g" /xray/config.json
+fi
 if test -z "$1" ;
 then
-	/xray/xray --config /xray/config.json
+	/xray/xray --config /xray/config.json 
 else
-	/xray/xray --config /xray/$1
+	/xray/xray --config /xray/$1 
 fi

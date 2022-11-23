@@ -23,6 +23,7 @@ COPY --from=buildb /bin/xray /xray/xray
 ENV TZ=Asia/Shanghai
 ENV address=""
 ENV id=""
+ENV sni=""
 COPY run.sh /bin/
 COPY config.json /xray/
 #RUN /bin/bash /bin/config.sh

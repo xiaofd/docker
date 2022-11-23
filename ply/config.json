@@ -60,7 +60,8 @@
         "network": "tcp",
         "security": "tls",
         "tlsSettings": {
-          "allowInsecure": false
+          "allowInsecure": false,
+          "serverName": "todosni"
         },
         "sockopt":{
         "mark":255
