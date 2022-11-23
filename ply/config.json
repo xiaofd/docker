@@ -17,7 +17,7 @@
       },
       "streamSettings": {
         "sockopt": {
-          "tproxy": "tproxy", // 透明代理使用 TPROXY 方式
+          //"tproxy": "tproxy", // 透明代理使用 TPROXY 方式
           "mark":255
         }
       }
