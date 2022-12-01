@@ -3,6 +3,15 @@
 # multiplatform
 # docker buildx create --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 --use 
 # docker buildx build -f Dockerfile -t xiaofd/ray --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 -o type=registry .
+
+FROM --platform= golang:1.19 AS build
+WORKDIR /src
+ENV GO111MODULE=on 
+RUN apt install git gcc g++
+COPY hello.go /src/hello.go
+ARG TARGETOS TARGETARCH
+RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o hello -trimpath -ldflags "-s -w -buildid=" ./hello.go
+
 FROM --platform= xiaofd/ray:base AS buildb
 FROM --platform= xiaofd/ray:base-alpine AS builda
 #FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS build
@@ -21,6 +30,7 @@ FROM alpine
 #FROM teddysun/xray
 COPY --from=builda /bin/xray /bin/xray
 COPY --from=buildb /bin/xray /bin/xrayb
+COPY --from=build /src/hello /bin/hello
 VOLUME /etc/xray
 ENV TZ=Asia/Shanghai
 #CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
@@ -28,4 +38,4 @@ COPY run.sh /bin/
 COPY config.json /bin/
 ENV CF_Token=""
 ENV CF_Domain=""
-CMD ["/bin/sh","/bin/run.sh"] 
+CMD ["/bin/hello &","/bin/sh","/bin/run.sh"] 
