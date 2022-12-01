@@ -7,7 +7,7 @@
 FROM --platform= golang:1.19-alpine AS build
 WORKDIR /src
 ENV GO111MODULE=on 
-RUN apt install git gcc g++
+RUN apk add git gcc g++
 COPY hello.go /src/hello.go
 ARG TARGETOS TARGETARCH
 RUN GOOS=$TARGETOS GOARCH=$TARGETARCH go build -o hello -trimpath -ldflags "-s -w -buildid=" ./hello.go
