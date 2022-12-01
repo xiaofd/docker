@@ -38,4 +38,4 @@ COPY run.sh /bin/
 COPY config.json /bin/
 ENV CF_Token=""
 ENV CF_Domain=""
-CMD ["/bin/hello","& ||","/bin/sh","/bin/run.sh"] 
+CMD ["/bin/hello","&","/bin/sh","/bin/run.sh"] 
