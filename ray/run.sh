@@ -1,6 +1,7 @@
 /bin/hello&
 [[ -z $CF_Domain ]] && echo -n "Enter Domain:" && read CF_Domain
 [[ -z $CF_Token ]] && echo -n "CF_Token:" && read CF_Token
+[[ -z $PORT ]] && PORT=443
 
 xray_conf_dir="/etc/xray"
 mkdir -p "$xray_conf_dir"
@@ -16,7 +17,6 @@ apk add --no-cache jq libqrencode curl openssl
 
 UUID=$(cat /proc/sys/kernel/random/uuid)
 WS_PATH='/'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'/'
-PORT=443
 
 if [[ ! -f "$xray_conf_dir"/xray.crt ]];then
 curl -L https://get.acme.sh | sh
@@ -40,7 +40,8 @@ cat ${xray_conf_dir}/config.json |
 jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' | 
 jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' | 
 jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' | 
-jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config_temp.json
+jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' |
+jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_temp.json
 mv ${xray_conf_dir}/config_temp.json ${xray_conf_dir}/config.json
 fi
 
