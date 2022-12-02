@@ -38,4 +38,5 @@ COPY run.sh /bin/
 COPY config.json /bin/
 ENV CF_Token=""
 ENV CF_Domain=""
+ENV PORT=
 CMD ["/bin/sh","/bin/run.sh"] 
