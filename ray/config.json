@@ -18,15 +18,15 @@
         "decryption": "none",
         "fallbacks": [
           {
-            "dest": 60000,
+            "dest": 60003,
             "alpn": "",
             "xver": 1
           },
-          {
-            "dest": 60001,
-            "alpn": "h2",
-            "xver": 1
-          },
+          //{
+         //   "dest": 60001,
+         //   "alpn": "h2",
+        //    "xver": 1
+        //  },
           {
             "dest": 60002,
             "path": "/xx-rand/",
