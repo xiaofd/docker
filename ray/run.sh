@@ -54,7 +54,7 @@ fi
 UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
 PORT=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].port)
 FLOW=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].flow | tr -d '"')
-WS_PATH=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.fallbacks[2].path | tr -d '"')
+WS_PATH=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.fallbacks[1].path | tr -d '"')
 WS_PATH_WITHOUT_SLASH=$(echo $WS_PATH | tr -d '/')
 DOMAIN=${CF_Domain}
 
