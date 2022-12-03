@@ -24,7 +24,7 @@
           },
           {
             "dest": 60004,
-            "path": "/xx-rand/",
+            "path": "/xx-path/",
             "xver": 1
           }
         ]
@@ -57,7 +57,7 @@
       "settings": {
           "clients": [
               {
-                  "id": "xx-uuid=above"
+                  "id": "xx-uuid"
               }
           ],
           "decryption": "none"
@@ -67,7 +67,7 @@
           "security": "none",
           "wsSettings": {
               "acceptProxyProtocol": true,
-              "path": "/xx-rand=above/"
+              "path": "/xx-path/"
           }
       }
   }
