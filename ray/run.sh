@@ -16,7 +16,9 @@ mkdir -p "$xray_conf_dir"
 apk add --no-cache jq libqrencode curl openssl
 
 UUID=$(cat /proc/sys/kernel/random/uuid)
-WS_PATH='/'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'/'
+#WS_PATH='/'$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))'/'
+WS_PATH_NOSPLASH=$(head -n 10 /dev/urandom | md5sum | head -c $((RANDOM % 12 + 4)))
+WS_PATH='/'${WS_PATH}'/'
 
 if [[ ! -f "$xray_conf_dir"/xray.crt ]];then
 curl -L https://get.acme.sh | sh
@@ -45,7 +47,7 @@ if [[ -n "$config_new" ]];then
 
 sed -i "s/xx-port/${PORT}/g" ${xray_conf_dir}/config.json
 sed -i "s/xx-uuid/${UUID}/g" ${xray_conf_dir}/config.json
-sed -i "s/xx-path/${WS_PATH}/g" ${xray_conf_dir}/config.json
+sed -i "s/xx-path/${WS_PATH_NOSPLASH}/g" ${xray_conf_dir}/config.json
 
 fi
 
