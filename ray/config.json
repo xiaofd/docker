@@ -23,7 +23,7 @@
             "xver": 1
           },
           {
-            "dest": 60002,
+            "dest": 60004,
             "path": "/xx-rand/",
             "xver": 1
           }
@@ -51,7 +51,7 @@
       }
     },
     {
-      "port": 60002,
+      "port": 60004,
       "listen": "127.0.0.1",
       "protocol": "vless",
       "settings": {
