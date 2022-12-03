@@ -40,9 +40,9 @@ cat ${xray_conf_dir}/config.json |
 jq 'setpath(["inbounds",0,"settings","clients",0,"id"];"'${UUID}'")' | 
 jq 'setpath(["inbounds",1,"settings","clients",0,"id"];"'${UUID}'")' | 
 jq 'setpath(["inbounds",0,"settings","fallbacks",2,"path"];"'${WS_PATH}'")' | 
-jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' |
-jq 'setpath(["inbounds",0,"port"];'${PORT}')' >${xray_conf_dir}/config_temp.json
+jq 'setpath(["inbounds",1,"streamSettings","wsSettings","path"];"'${WS_PATH}'")' >${xray_conf_dir}/config_temp.json
 mv ${xray_conf_dir}/config_temp.json ${xray_conf_dir}/config.json
+sed -i "s/xx-port/${PORT}/g" ${xray_conf_dir}/config.json
 fi
 
 UUID=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.clients[0].id | tr -d '"')
