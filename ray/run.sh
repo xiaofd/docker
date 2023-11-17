@@ -1,4 +1,4 @@
-/bin/hello&
+#/bin/hello&
 [[ -z $CF_Domain ]] && echo -n "Enter Domain:" && read CF_Domain
 [[ -z $CF_Token ]] && echo -n "CF_Token:" && read CF_Token
 PORT="$XRAY_Port"
