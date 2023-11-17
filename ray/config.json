@@ -62,7 +62,7 @@
                 "network": "ws",
                 "security": "none",
                 "wsSettings": {
-                    "acceptProxyProtocol": true, // 提醒：若你用 Nginx/Caddy 等反代 WS，需要删掉这行
+                    "acceptProxyProtocol": true,
                     "path": "/xx-path"
                 }
             }
