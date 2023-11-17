@@ -1,80 +1,76 @@
 {
-  "log": {
-    "access": "/etc/xray/access.log",
-    "error": "/etc/xray/error.log",
-    "loglevel": "warning"
-  },
-  "inbounds": [
-    {
-      "port": xx-port,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "xx-uuid",
-            "flow": "xtls-rprx-direct"
-          }
-        ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "dest": 60003,
-            "alpn": "",
-            "xver": 1
-          },
-          {
-            "dest": 60004,
-            "path": "/xx-path/",
-            "xver": 1
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "xtls",
-        "xtlsSettings": {
-          "minVersion": "1.2",
-          "certificates": [
-            {
-              "certificateFile": "/etc/xray/xray.crt",
-              "keyFile": "/etc/xray/xray.key"
-            }
-          ]
-        }
-      },
-      "sniffing": {
-        "enabled": true,
-        "destOverride": [
-          "http",
-          "tls"
-        ]
-      }
+    "log": {
+        "access": "/etc/xray/access.log",
+        "error": "/etc/xray/error.log",
+        "loglevel": "warning"
     },
-    {
-      "port": 60004,
-      "listen": "127.0.0.1",
-      "protocol": "vless",
-      "settings": {
-          "clients": [
-              {
-                  "id": "xx-uuid"
-              }
-          ],
-          "decryption": "none"
-      },
-      "streamSettings": {
-          "network": "ws",
-          "security": "none",
-          "wsSettings": {
-              "acceptProxyProtocol": true,
-              "path": "/xx-path/"
-          }
-      }
-  }
-],
-  "outbounds": [
-    {
-      "protocol": "freedom"
-    }
-  ]
+    "inbounds": [
+        {
+            "port": xx-port,
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "xx-uuid", 
+                        "level": 0,
+                        "email": "love@example.com"
+                    }
+                ],
+                "decryption": "none",
+                "fallbacks": [
+                    {
+                        "dest": 60003
+                    },
+                    {
+                        "path": "/xx-path",
+                        "dest": 60004,
+                        "xver": 1
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "tls",
+                "tlsSettings": {
+                    "alpn": [
+                        "http/1.1"
+                    ],
+                    "certificates": [
+                        {
+                            "certificateFile": "/etc/xray/xray.crt",
+                            "keyFile": "/etc/xray/xray.key"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "port": 60004,
+            "listen": "127.0.0.1",
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "xx-uuid", 
+                        "level": 0,
+                        "email": "love@example.com"
+                    }
+                ],
+                "decryption": "none"
+            },
+            "streamSettings": {
+                "network": "ws",
+                "security": "none",
+                "wsSettings": {
+                    "acceptProxyProtocol": true, // 提醒：若你用 Nginx/Caddy 等反代 WS，需要删掉这行
+                    "path": "/xx-path"
+                }
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom"
+        }
+    ]
 }
