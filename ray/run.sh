@@ -58,15 +58,18 @@ WS_PATH=$(cat ${xray_conf_dir}/config.json | jq .inbounds[0].settings.fallbacks[
 WS_PATH_WITHOUT_SLASH=$(echo $WS_PATH | tr -d '/')
 DOMAIN=${CF_Domain}
 
-echo "URL 链接 (VLESS + TCP + TLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN" | qrencode -o- -t UTF8
-echo "URL 链接 (VLESS + TCP + XTLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN" | qrencode -o- -t UTF8
+#echo "URL 链接 (VLESS + TCP + TLS)"
+#echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN"
+#echo "vless://$UUID@$DOMAIN:$PORT?security=tls#TLS-$DOMAIN" | qrencode -o- -t UTF8
+#echo "URL 链接 (VLESS + TCP + XTLS)"
+#echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN"
+#echo "vless://$UUID@$DOMAIN:$PORT?security=xtls&flow=$FLOW#XTLS-$DOMAIN" | qrencode -o- -t UTF8
 echo "URL 链接 (VLESS + WebSocket + TLS)"
-echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS-$DOMAIN"
-echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}%2f#WS_TLS-$DOMAIN" | qrencode -o- -t UTF8
+echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}#WS_TLS-$DOMAIN"
+echo "vless://$UUID@$DOMAIN:$PORT?type=ws&security=tls&path=%2f${WS_PATH_WITHOUT_SLASH}#WS_TLS-$DOMAIN" | qrencode -o- -t UTF8
+echo "URL 链接(CDN)"
+echo "vless://${UUID}@www.csgo.com:${PORT}?path=%2F${WS_PATH_WITHOUT_SLASH}&security=tls&encryption=none&host=${DOMAIN}&fp=random&type=ws&sni=${DOMAIN}#WS_TLS-${DOMAIN}"
+echo "vless://${UUID}@www.csgo.com:${PORT}?path=%2F${WS_PATH_WITHOUT_SLASH}&security=tls&encryption=none&host=${DOMAIN}&fp=random&type=ws&sni=${DOMAIN}#WS_TLS-${DOMAIN}" | qrencode -o- -t UTF8
 
 #"$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
 /bin/xray --config "$xray_conf_dir"/config.json
