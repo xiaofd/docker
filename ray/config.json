@@ -22,7 +22,7 @@
                         "dest": 60003
                     },
                     {
-                        "path": "/xx-path/",
+                        "path": "/xx-path",
                         "dest": 60004,
                         "xver": 1
                     }
@@ -63,7 +63,7 @@
                 "security": "none",
                 "wsSettings": {
                     "acceptProxyProtocol": true,
-                    "path": "/xx-path/"
+                    "path": "/xx-path"
                 }
             }
         }
