@@ -3,7 +3,7 @@
 # multiplatform
 # docker buildx create --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 --use 
 # docker buildx build -f Dockerfile -t xiaofd/ray --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 -o type=registry .
-FROM --platform= golang:1.19 AS build
+FROM --platform= golang:1.21 AS build
 #FROM --platform=$BUILDPLATFORM golang:1.18-alpine AS build
 WORKDIR /src
 ENV GO111MODULE=on 
