@@ -3,9 +3,10 @@ package conf
 import (
 	"encoding/base64"
 	"encoding/hex"
+	"strings"
 
-	"github.com/golang/protobuf/proto"
 	"github.com/xtls/xray-core/proxy/wireguard"
+	"google.golang.org/protobuf/proto"
 )
 
 type WireGuardPeerConfig struct {
@@ -47,11 +48,13 @@ func (c *WireGuardPeerConfig) Build() (proto.Message, error) {
 }
 
 type WireGuardConfig struct {
-	SecretKey  string                 `json:"secretKey"`
-	Address    []string               `json:"address"`
-	Peers      []*WireGuardPeerConfig `json:"peers"`
-	MTU        int                    `json:"mtu"`
-	NumWorkers int                    `json:"workers"`
+	SecretKey      string                 `json:"secretKey"`
+	Address        []string               `json:"address"`
+	Peers          []*WireGuardPeerConfig `json:"peers"`
+	MTU            int                    `json:"mtu"`
+	NumWorkers     int                    `json:"workers"`
+	Reserved       []byte                 `json:"reserved"`
+	DomainStrategy string                 `json:"domainStrategy"`
 }
 
 func (c *WireGuardConfig) Build() (proto.Message, error) {
@@ -89,6 +92,26 @@ func (c *WireGuardConfig) Build() (proto.Message, error) {
 	// these a fallback code exists in github.com/nanoda0523/wireguard-go code,
 	// we don't need to process fallback manually
 	config.NumWorkers = int32(c.NumWorkers)
+
+	if len(c.Reserved) != 0 && len(c.Reserved) != 3 {
+		return nil, newError(`"reserved" should be empty or 3 bytes`)
+	}
+	config.Reserved = c.Reserved
+
+	switch strings.ToLower(c.DomainStrategy) {
+	case "forceip", "":
+		config.DomainStrategy = wireguard.DeviceConfig_FORCE_IP
+	case "forceipv4":
+		config.DomainStrategy = wireguard.DeviceConfig_FORCE_IP4
+	case "forceipv6":
+		config.DomainStrategy = wireguard.DeviceConfig_FORCE_IP6
+	case "forceipv4v6":
+		config.DomainStrategy = wireguard.DeviceConfig_FORCE_IP46
+	case "forceipv6v4":
+		config.DomainStrategy = wireguard.DeviceConfig_FORCE_IP64
+	default:
+		return nil, newError("unsupported domain strategy: ", c.DomainStrategy)
+	}
 
 	return config, nil
 }
