@@ -1,0 +1,22 @@
+--- a/options.json
++++ b/options.json
+@@ -319,8 +319,8 @@
+     - checkboxes: boolean, show a checkbox on mouse over item
+     */
+     "select": {
+-        "enabled": true,
+-        "clickndrag": true,
++        "enabled": false,
++        "clickndrag": false,
+         "checkboxes": true
+     },
+
+@@ -383,7 +383,7 @@
+     - ignorecase: boolean, sort ignorecase
+     */
+     "tree": {
+-        "enabled": true,
++        "enabled": false,
+         "show": true,
+         "maxSubfolders": 50,
+         "naturalSort": true,
