@@ -6,12 +6,14 @@ import (
 	"crypto/cipher"
 	"crypto/md5"
 	"crypto/sha1"
+	"google.golang.org/protobuf/proto"
 	"io"
 
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/antireplay"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/crypto"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/protocol"
 	"golang.org/x/crypto/chacha20poly1305"
 	"golang.org/x/crypto/hkdf"
@@ -19,13 +21,15 @@ import (
 
 // MemoryAccount is an account type converted from Account.
 type MemoryAccount struct {
-	Cipher Cipher
-	Key    []byte
+	Cipher     Cipher
+	CipherType CipherType
+	Key        []byte
+	Password   string
 
 	replayFilter antireplay.GeneralizedReplayFilter
 }
 
-var ErrIVNotUnique = newError("IV is not unique")
+var ErrIVNotUnique = errors.New("IV is not unique")
 
 // Equals implements protocol.Account.Equals().
 func (a *MemoryAccount) Equals(another protocol.Account) bool {
@@ -33,6 +37,14 @@ func (a *MemoryAccount) Equals(another protocol.Account) bool {
 		return bytes.Equal(a.Key, account.Key)
 	}
 	return false
+}
+
+func (a *MemoryAccount) ToProto() proto.Message {
+	return &Account{
+		CipherType: a.CipherType,
+		Password:   a.Password,
+		IvCheck:    a.replayFilter != nil,
+	}
 }
 
 func (a *MemoryAccount) CheckIV(iv []byte) error {
@@ -94,7 +106,7 @@ func (a *Account) getCipher() (Cipher, error) {
 	case CipherType_NONE:
 		return NoneCipher{}, nil
 	default:
-		return nil, newError("Unsupported cipher.")
+		return nil, errors.New("Unsupported cipher.")
 	}
 }
 
@@ -102,11 +114,13 @@ func (a *Account) getCipher() (Cipher, error) {
 func (a *Account) AsAccount() (protocol.Account, error) {
 	Cipher, err := a.getCipher()
 	if err != nil {
-		return nil, newError("failed to get cipher").Base(err)
+		return nil, errors.New("failed to get cipher").Base(err)
 	}
 	return &MemoryAccount{
-		Cipher: Cipher,
-		Key:    passwordToCipherKey([]byte(a.Password), Cipher.KeySize()),
+		Cipher:     Cipher,
+		CipherType: a.CipherType,
+		Key:        passwordToCipherKey([]byte(a.Password), Cipher.KeySize()),
+		Password:   a.Password,
 		replayFilter: func() antireplay.GeneralizedReplayFilter {
 			if a.IvCheck {
 				return antireplay.NewBloomRing()
@@ -182,7 +196,7 @@ func (c *AEADCipher) EncodePacket(key []byte, b *buf.Buffer) error {
 
 func (c *AEADCipher) DecodePacket(key []byte, b *buf.Buffer) error {
 	if b.Len() <= c.IVSize() {
-		return newError("insufficient data: ", b.Len())
+		return errors.New("insufficient data: ", b.Len())
 	}
 	ivLen := c.IVSize()
 	payloadLen := b.Len()

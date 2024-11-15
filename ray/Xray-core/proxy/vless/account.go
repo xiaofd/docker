@@ -1,6 +1,9 @@
 package vless
 
 import (
+	"google.golang.org/protobuf/proto"
+
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/protocol"
 	"github.com/xtls/xray-core/common/uuid"
 )
@@ -9,7 +12,7 @@ import (
 func (a *Account) AsAccount() (protocol.Account, error) {
 	id, err := uuid.ParseString(a.Id)
 	if err != nil {
-		return nil, newError("failed to parse ID").Base(err).AtError()
+		return nil, errors.New("failed to parse ID").Base(err).AtError()
 	}
 	return &MemoryAccount{
 		ID:         protocol.NewID(id),
@@ -35,4 +38,12 @@ func (a *MemoryAccount) Equals(account protocol.Account) bool {
 		return false
 	}
 	return a.ID.Equals(vlessAccount.ID)
+}
+
+func (a *MemoryAccount) ToProto() proto.Message {
+	return &Account{
+		Id:         a.ID.String(),
+		Flow:       a.Flow,
+		Encryption: a.Encryption,
+	}
 }

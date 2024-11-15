@@ -5,6 +5,7 @@ import (
 
 	"github.com/xtls/xray-core/app/observatory"
 	"github.com/xtls/xray-core/common"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/core"
 	"github.com/xtls/xray-core/features/extension"
 )
@@ -12,6 +13,10 @@ import (
 type LeastPingStrategy struct {
 	ctx         context.Context
 	observatory extension.Observatory
+}
+
+func (l *LeastPingStrategy) GetPrincipleTarget(strings []string) []string {
+	return []string{l.PickOutbound(strings)}
 }
 
 func (l *LeastPingStrategy) InjectContext(ctx context.Context) {
@@ -28,7 +33,7 @@ func (l *LeastPingStrategy) PickOutbound(strings []string) string {
 
 	observeReport, err := l.observatory.GetObservation(l.ctx)
 	if err != nil {
-		newError("cannot get observe report").Base(err).WriteToLog()
+		errors.LogInfoInner(l.ctx, err, "cannot get observe report")
 		return ""
 	}
 	outboundsList := outboundList(strings)

@@ -13,8 +13,10 @@ import (
 	"math/big"
 	"runtime"
 	"strconv"
+	"time"
 
 	"github.com/pires/go-proxyproto"
+	"github.com/xtls/xray-core/app/dispatcher"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/net"
@@ -76,6 +78,15 @@ type UserManager interface {
 
 	// RemoveUser removes a user by email.
 	RemoveUser(context.Context, string) error
+
+	// Get user by email.
+	GetUser(context.Context, string) *protocol.MemoryUser
+
+	// Get all users.
+	GetUsers(context.Context) []*protocol.MemoryUser
+
+	// Get users count.
+	GetUsersCount(context.Context) int64
 }
 
 type GetInbound interface {
@@ -100,7 +111,7 @@ type TrafficState struct {
 	// reader link state
 	WithinPaddingBuffers     bool
 	ReaderSwitchToDirectCopy bool
-	RemainingCommand		 int32
+	RemainingCommand         int32
 	RemainingContent         int32
 	RemainingPadding         int32
 	CurrentCommand           int
@@ -166,7 +177,7 @@ func (w *VisionReader) ReadMultiBuffer() (buf.MultiBuffer, error) {
 				w.trafficState.WithinPaddingBuffers = false
 				w.trafficState.ReaderSwitchToDirectCopy = true
 			} else {
-				newError("XtlsRead unknown command ", w.trafficState.CurrentCommand, buffer.Len()).WriteToLog(session.ExportIDToError(w.ctx))
+				errors.LogInfo(w.ctx, "XtlsRead unknown command ", w.trafficState.CurrentCommand, buffer.Len())
 			}
 		}
 		if w.trafficState.NumberOfPacketToFilter > 0 {
@@ -213,7 +224,7 @@ func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 					w.trafficState.WriterSwitchToDirectCopy = true
 				}
 				var command byte = CommandPaddingContinue
-				if i == len(mb) - 1 {
+				if i == len(mb)-1 {
 					command = CommandPaddingEnd
 					if w.trafficState.EnableXtls {
 						command = CommandPaddingDirect
@@ -229,7 +240,7 @@ func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 				break
 			}
 			var command byte = CommandPaddingContinue
-			if i == len(mb) - 1 && !w.trafficState.IsPadding {
+			if i == len(mb)-1 && !w.trafficState.IsPadding {
 				command = CommandPaddingEnd
 				if w.trafficState.EnableXtls {
 					command = CommandPaddingDirect
@@ -241,7 +252,7 @@ func (w *VisionWriter) WriteMultiBuffer(mb buf.MultiBuffer) error {
 	return w.Writer.WriteMultiBuffer(mb)
 }
 
-// ReshapeMultiBuffer prepare multi buffer for padding stucture (max 21 bytes)
+// ReshapeMultiBuffer prepare multi buffer for padding structure (max 21 bytes)
 func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBuffer {
 	needReshape := 0
 	for _, b := range buffer {
@@ -272,11 +283,11 @@ func ReshapeMultiBuffer(ctx context.Context, buffer buf.MultiBuffer) buf.MultiBu
 		buffer[i] = nil
 	}
 	buffer = buffer[:0]
-	newError("ReshapeMultiBuffer ", toPrint).WriteToLog(session.ExportIDToError(ctx))
+	errors.LogInfo(ctx, "ReshapeMultiBuffer ", toPrint)
 	return mb2
 }
 
-// XtlsPadding add padding to eliminate length siganature during tls handshake
+// XtlsPadding add padding to eliminate length signature during tls handshake
 func XtlsPadding(b *buf.Buffer, command byte, userUUID *[]byte, longPadding bool, ctx context.Context) *buf.Buffer {
 	var contentLen int32 = 0
 	var paddingLen int32 = 0
@@ -286,13 +297,13 @@ func XtlsPadding(b *buf.Buffer, command byte, userUUID *[]byte, longPadding bool
 	if contentLen < 900 && longPadding {
 		l, err := rand.Int(rand.Reader, big.NewInt(500))
 		if err != nil {
-			newError("failed to generate padding").Base(err).WriteToLog(session.ExportIDToError(ctx))
+			errors.LogDebugInner(ctx, err, "failed to generate padding")
 		}
 		paddingLen = int32(l.Int64()) + 900 - contentLen
 	} else {
 		l, err := rand.Int(rand.Reader, big.NewInt(256))
 		if err != nil {
-			newError("failed to generate padding").Base(err).WriteToLog(session.ExportIDToError(ctx))
+			errors.LogDebugInner(ctx, err, "failed to generate padding")
 		}
 		paddingLen = int32(l.Int64())
 	}
@@ -311,13 +322,13 @@ func XtlsPadding(b *buf.Buffer, command byte, userUUID *[]byte, longPadding bool
 		b = nil
 	}
 	newbuffer.Extend(paddingLen)
-	newError("XtlsPadding ", contentLen, " ", paddingLen, " ", command).WriteToLog(session.ExportIDToError(ctx))
+	errors.LogInfo(ctx, "XtlsPadding ", contentLen, " ", paddingLen, " ", command)
 	return newbuffer
 }
 
 // XtlsUnpadding remove padding and parse command
 func XtlsUnpadding(b *buf.Buffer, s *TrafficState, ctx context.Context) *buf.Buffer {
-	if s.RemainingCommand == -1 && s.RemainingContent == -1 && s.RemainingPadding == -1 { // inital state
+	if s.RemainingCommand == -1 && s.RemainingContent == -1 && s.RemainingPadding == -1 { // initial state
 		if b.Len() >= 21 && bytes.Equal(s.UserUUID, b.BytesTo(16)) {
 			b.Advance(16)
 			s.RemainingCommand = 5
@@ -336,14 +347,14 @@ func XtlsUnpadding(b *buf.Buffer, s *TrafficState, ctx context.Context) *buf.Buf
 			case 5:
 				s.CurrentCommand = int(data)
 			case 4:
-				s.RemainingContent = int32(data)<<8
+				s.RemainingContent = int32(data) << 8
 			case 3:
 				s.RemainingContent = s.RemainingContent | int32(data)
 			case 2:
-				s.RemainingPadding = int32(data)<<8
+				s.RemainingPadding = int32(data) << 8
 			case 1:
 				s.RemainingPadding = s.RemainingPadding | int32(data)
-				newError("Xtls Unpadding new block, content ", s.RemainingContent, " padding ", s.RemainingPadding, " command ", s.CurrentCommand).WriteToLog(session.ExportIDToError(ctx))
+				errors.LogInfo(ctx, "Xtls Unpadding new block, content ", s.RemainingContent, " padding ", s.RemainingPadding, " command ", s.CurrentCommand)
 			}
 			s.RemainingCommand--
 		} else if s.RemainingContent > 0 {
@@ -402,11 +413,11 @@ func XtlsFilterTls(buffer buf.MultiBuffer, trafficState *TrafficState, ctx conte
 					cipherSuite := b.BytesRange(43+sessionIdLen+1, 43+sessionIdLen+3)
 					trafficState.Cipher = uint16(cipherSuite[0])<<8 | uint16(cipherSuite[1])
 				} else {
-					newError("XtlsFilterTls short server hello, tls 1.2 or older? ", b.Len(), " ", trafficState.RemainingServerHello).WriteToLog(session.ExportIDToError(ctx))
+					errors.LogInfo(ctx, "XtlsFilterTls short server hello, tls 1.2 or older? ", b.Len(), " ", trafficState.RemainingServerHello)
 				}
 			} else if bytes.Equal(TlsClientHandShakeStart, startsBytes[:2]) && startsBytes[5] == TlsHandshakeTypeClientHello {
 				trafficState.IsTLS = true
-				newError("XtlsFilterTls found tls client hello! ", buffer.Len()).WriteToLog(session.ExportIDToError(ctx))
+				errors.LogInfo(ctx, "XtlsFilterTls found tls client hello! ", buffer.Len())
 			}
 		}
 		if trafficState.RemainingServerHello > 0 {
@@ -422,18 +433,18 @@ func XtlsFilterTls(buffer buf.MultiBuffer, trafficState *TrafficState, ctx conte
 				} else if v != "TLS_AES_128_CCM_8_SHA256" {
 					trafficState.EnableXtls = true
 				}
-				newError("XtlsFilterTls found tls 1.3! ", b.Len(), " ", v).WriteToLog(session.ExportIDToError(ctx))
+				errors.LogInfo(ctx, "XtlsFilterTls found tls 1.3! ", b.Len(), " ", v)
 				trafficState.NumberOfPacketToFilter = 0
 				return
 			} else if trafficState.RemainingServerHello <= 0 {
-				newError("XtlsFilterTls found tls 1.2! ", b.Len()).WriteToLog(session.ExportIDToError(ctx))
+				errors.LogInfo(ctx, "XtlsFilterTls found tls 1.2! ", b.Len())
 				trafficState.NumberOfPacketToFilter = 0
 				return
 			}
-			newError("XtlsFilterTls inconclusive server hello ", b.Len(), " ", trafficState.RemainingServerHello).WriteToLog(session.ExportIDToError(ctx))
+			errors.LogInfo(ctx, "XtlsFilterTls inconclusive server hello ", b.Len(), " ", trafficState.RemainingServerHello)
 		}
 		if trafficState.NumberOfPacketToFilter <= 0 {
-			newError("XtlsFilterTls stop filtering", buffer.Len()).WriteToLog(session.ExportIDToError(ctx))
+			errors.LogInfo(ctx, "XtlsFilterTls stop filtering", buffer.Len())
 		}
 	}
 }
@@ -468,47 +479,84 @@ func UnwrapRawConn(conn net.Conn) (net.Conn, stats.Counter, stats.Counter) {
 // CopyRawConnIfExist use the most efficient copy method.
 // - If caller don't want to turn on splice, do not pass in both reader conn and writer conn
 // - writer are from *transport.Link
-func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net.Conn, writer buf.Writer, timer signal.ActivityUpdater) error {
+func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net.Conn, writer buf.Writer, timer *signal.ActivityTimer, inTimer *signal.ActivityTimer) error {
 	readerConn, readCounter, _ := UnwrapRawConn(readerConn)
 	writerConn, _, writeCounter := UnwrapRawConn(writerConn)
 	reader := buf.NewReader(readerConn)
-	if inbound := session.InboundFromContext(ctx); inbound != nil {
-		if tc, ok := writerConn.(*net.TCPConn); ok && readerConn != nil && writerConn != nil && (runtime.GOOS == "linux" || runtime.GOOS == "android") {
-			for inbound.CanSpliceCopy != 3 {
-				if inbound.CanSpliceCopy == 1 {
-					newError("CopyRawConn splice").WriteToLog(session.ExportIDToError(ctx))
-					runtime.Gosched() // necessary
-					w, err := tc.ReadFrom(readerConn)
-					if readCounter != nil {
-						readCounter.Add(w)
-					}
-					if writeCounter != nil {
-						writeCounter.Add(w)
-					}
-					if err != nil && errors.Cause(err) != io.EOF {
-						return err
-					}
-					return nil
-				}
-				buffer, err := reader.ReadMultiBuffer()
-				if !buffer.IsEmpty() {
-					if readCounter != nil {
-						readCounter.Add(int64(buffer.Len()))
-					}
-					timer.Update()
-					if werr := writer.WriteMultiBuffer(buffer); werr != nil {
-						return werr
-					}
-				}
-				if err != nil {
-					return err
-				}
-			}
+	if runtime.GOOS != "linux" && runtime.GOOS != "android" {
+		return readV(ctx, reader, writer, timer, readCounter)
+	}
+	tc, ok := writerConn.(*net.TCPConn)
+	if !ok || readerConn == nil || writerConn == nil {
+		return readV(ctx, reader, writer, timer, readCounter)
+	}
+	inbound := session.InboundFromContext(ctx)
+	if inbound == nil || inbound.CanSpliceCopy == 3 {
+		return readV(ctx, reader, writer, timer, readCounter)
+	}
+	outbounds := session.OutboundsFromContext(ctx)
+	if len(outbounds) == 0 {
+		return readV(ctx, reader, writer, timer, readCounter)
+	}
+	for _, ob := range outbounds {
+		if ob.CanSpliceCopy == 3 {
+			return readV(ctx, reader, writer, timer, readCounter)
 		}
 	}
-	newError("CopyRawConn readv").WriteToLog(session.ExportIDToError(ctx))
+
+	for {
+		inbound := session.InboundFromContext(ctx)
+		outbounds := session.OutboundsFromContext(ctx)
+		var splice = inbound.CanSpliceCopy == 1
+		for _, ob := range outbounds {
+			if ob.CanSpliceCopy != 1 {
+				splice = false
+			}
+		}
+		if splice {
+			errors.LogInfo(ctx, "CopyRawConn splice")
+			statWriter, _ := writer.(*dispatcher.SizeStatWriter)
+			//runtime.Gosched() // necessary
+			time.Sleep(time.Millisecond)    // without this, there will be a rare ssl error for freedom splice
+			timer.SetTimeout(8 * time.Hour) // prevent leak, just in case
+			if inTimer != nil {
+				inTimer.SetTimeout(8 * time.Hour)
+			}
+			w, err := tc.ReadFrom(readerConn)
+			if readCounter != nil {
+				readCounter.Add(w) // outbound stats
+			}
+			if writeCounter != nil {
+				writeCounter.Add(w) // inbound stats
+			}
+			if statWriter != nil {
+				statWriter.Counter.Add(w) // user stats
+			}
+			if err != nil && errors.Cause(err) != io.EOF {
+				return err
+			}
+			return nil
+		}
+		buffer, err := reader.ReadMultiBuffer()
+		if !buffer.IsEmpty() {
+			if readCounter != nil {
+				readCounter.Add(int64(buffer.Len()))
+			}
+			timer.Update()
+			if werr := writer.WriteMultiBuffer(buffer); werr != nil {
+				return werr
+			}
+		}
+		if err != nil {
+			return err
+		}
+	}
+}
+
+func readV(ctx context.Context, reader buf.Reader, writer buf.Writer, timer signal.ActivityUpdater, readCounter stats.Counter) error {
+	errors.LogInfo(ctx, "CopyRawConn readv")
 	if err := buf.Copy(reader, writer, buf.UpdateActivity(timer), buf.AddToStatCounter(readCounter)); err != nil {
-		return newError("failed to process response").Base(err)
+		return errors.New("failed to process response").Base(err)
 	}
 	return nil
 }

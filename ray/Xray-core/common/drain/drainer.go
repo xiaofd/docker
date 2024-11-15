@@ -2,9 +2,9 @@ package drain
 
 import (
 	"io"
-	"io/ioutil"
 
 	"github.com/xtls/xray-core/common/dice"
+	"github.com/xtls/xray-core/common/errors"
 )
 
 type BehaviorSeedLimitedDrainer struct {
@@ -28,15 +28,15 @@ func (d *BehaviorSeedLimitedDrainer) Drain(reader io.Reader) error {
 	if d.DrainSize > 0 {
 		err := drainReadN(reader, d.DrainSize)
 		if err == nil {
-			return newError("drained connection")
+			return errors.New("drained connection")
 		}
-		return newError("unable to drain connection").Base(err)
+		return errors.New("unable to drain connection").Base(err)
 	}
 	return nil
 }
 
 func drainReadN(reader io.Reader, n int) error {
-	_, err := io.CopyN(ioutil.Discard, reader, int64(n))
+	_, err := io.CopyN(io.Discard, reader, int64(n))
 	return err
 }
 
@@ -45,7 +45,7 @@ func WithError(drainer Drainer, reader io.Reader, err error) error {
 	if drainErr == nil {
 		return err
 	}
-	return newError(drainErr).Base(err)
+	return errors.New(drainErr).Base(err)
 }
 
 type NopDrainer struct{}

@@ -22,7 +22,7 @@ import (
 )
 
 type ClientManager struct {
-	Enabled bool // wheather mux is enabled from user config
+	Enabled bool // whether mux is enabled from user config
 	Picker  WorkerPicker
 }
 
@@ -37,7 +37,7 @@ func (m *ClientManager) Dispatch(ctx context.Context, link *transport.Link) erro
 		}
 	}
 
-	return newError("unable to find an available mux client").AtWarning()
+	return errors.New("unable to find an available mux client").AtWarning()
 }
 
 type WorkerPicker interface {
@@ -57,7 +57,7 @@ func (p *IncrementalWorkerPicker) cleanupFunc() error {
 	defer p.access.Unlock()
 
 	if len(p.workers) == 0 {
-		return newError("no worker")
+		return errors.New("no worker")
 	}
 
 	p.cleanup()
@@ -148,13 +148,14 @@ func (f *DialingWorkerFactory) Create() (*ClientWorker, error) {
 	}
 
 	go func(p proxy.Outbound, d internet.Dialer, c common.Closable) {
-		ctx := session.ContextWithOutbound(context.Background(), &session.Outbound{
+		outbounds := []*session.Outbound{{
 			Target: net.TCPDestination(muxCoolAddress, muxCoolPort),
-		})
+		}}
+		ctx := session.ContextWithOutbounds(context.Background(), outbounds)
 		ctx, cancel := context.WithCancel(ctx)
 
 		if err := p.Process(ctx, &transport.Link{Reader: uplinkReader, Writer: downlinkWriter}, d); err != nil {
-			errors.New("failed to handler mux client connection").Base(err).WriteToLog()
+			errors.LogInfoInner(ctx, err, "failed to handler mux client connection")
 		}
 		common.Must(c.Close())
 		cancel()
@@ -242,25 +243,26 @@ func writeFirstPayload(reader buf.Reader, writer *Writer) error {
 }
 
 func fetchInput(ctx context.Context, s *Session, output buf.Writer) {
-	dest := session.OutboundFromContext(ctx).Target
+	outbounds := session.OutboundsFromContext(ctx)
+	ob := outbounds[len(outbounds)-1]
 	transferType := protocol.TransferTypeStream
-	if dest.Network == net.Network_UDP {
+	if ob.Target.Network == net.Network_UDP {
 		transferType = protocol.TransferTypePacket
 	}
 	s.transferType = transferType
-	writer := NewWriter(s.ID, dest, output, transferType, xudp.GetGlobalID(ctx))
+	writer := NewWriter(s.ID, ob.Target, output, transferType, xudp.GetGlobalID(ctx))
 	defer s.Close(false)
 	defer writer.Close()
 
-	newError("dispatching request to ", dest).WriteToLog(session.ExportIDToError(ctx))
+	errors.LogInfo(ctx, "dispatching request to ", ob.Target)
 	if err := writeFirstPayload(s.input, writer); err != nil {
-		newError("failed to write first payload").Base(err).WriteToLog(session.ExportIDToError(ctx))
+		errors.LogInfoInner(ctx, err, "failed to write first payload")
 		writer.hasError = true
 		return
 	}
 
 	if err := buf.Copy(s.input, writer); err != nil {
-		newError("failed to fetch all input").Base(err).WriteToLog(session.ExportIDToError(ctx))
+		errors.LogInfoInner(ctx, err, "failed to fetch all input")
 		writer.hasError = true
 		return
 	}
@@ -333,7 +335,7 @@ func (m *ClientWorker) handleStatusKeep(meta *FrameMetadata, reader *buf.Buffere
 	rr := s.NewReader(reader, &meta.Target)
 	err := buf.Copy(rr, s.output)
 	if err != nil && buf.IsWriteError(err) {
-		newError("failed to write to downstream. closing session ", s.ID).Base(err).WriteToLog()
+		errors.LogInfoInner(context.Background(), err, "failed to write to downstream. closing session ", s.ID)
 		s.Close(false)
 		return buf.Copy(rr, buf.Discard)
 	}
@@ -363,7 +365,7 @@ func (m *ClientWorker) fetchOutput() {
 		err := meta.Unmarshal(reader)
 		if err != nil {
 			if errors.Cause(err) != io.EOF {
-				newError("failed to read metadata").Base(err).WriteToLog()
+				errors.LogInfoInner(context.Background(), err, "failed to read metadata")
 			}
 			break
 		}
@@ -379,12 +381,12 @@ func (m *ClientWorker) fetchOutput() {
 			err = m.handleStatusKeep(&meta, reader)
 		default:
 			status := meta.SessionStatus
-			newError("unknown status: ", status).AtError().WriteToLog()
+			errors.LogError(context.Background(), "unknown status: ", status)
 			return
 		}
 
 		if err != nil {
-			newError("failed to process data").Base(err).WriteToLog()
+			errors.LogInfoInner(context.Background(), err, "failed to process data")
 			return
 		}
 	}

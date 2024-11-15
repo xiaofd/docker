@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/xtls/xray-core/common"
+	c "github.com/xtls/xray-core/common/ctx"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/net"
 	"github.com/xtls/xray-core/common/session"
 	"github.com/xtls/xray-core/transport/internet"
@@ -17,16 +19,16 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/backoff"
 	"google.golang.org/grpc/connectivity"
-	"google.golang.org/grpc/credentials"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 )
 
 func Dial(ctx context.Context, dest net.Destination, streamSettings *internet.MemoryStreamConfig) (stat.Connection, error) {
-	newError("creating connection to ", dest).WriteToLog(session.ExportIDToError(ctx))
+	errors.LogInfo(ctx, "creating connection to ", dest)
 
 	conn, err := dialgRPC(ctx, dest, streamSettings)
 	if err != nil {
-		return nil, newError("failed to dial gRPC").Base(err)
+		return nil, errors.New("failed to dial gRPC").Base(err)
 	}
 	return stat.Connection(conn), nil
 }
@@ -50,22 +52,22 @@ func dialgRPC(ctx context.Context, dest net.Destination, streamSettings *interne
 
 	conn, err := getGrpcClient(ctx, dest, streamSettings)
 	if err != nil {
-		return nil, newError("Cannot dial gRPC").Base(err)
+		return nil, errors.New("Cannot dial gRPC").Base(err)
 	}
 	client := encoding.NewGRPCServiceClient(conn)
 	if grpcSettings.MultiMode {
-		newError("using gRPC multi mode service name: `" + grpcSettings.getServiceName() + "` stream name: `" + grpcSettings.getTunMultiStreamName() + "`").AtDebug().WriteToLog()
+		errors.LogDebug(ctx, "using gRPC multi mode service name: `"+grpcSettings.getServiceName()+"` stream name: `"+grpcSettings.getTunMultiStreamName()+"`")
 		grpcService, err := client.(encoding.GRPCServiceClientX).TunMultiCustomName(ctx, grpcSettings.getServiceName(), grpcSettings.getTunMultiStreamName())
 		if err != nil {
-			return nil, newError("Cannot dial gRPC").Base(err)
+			return nil, errors.New("Cannot dial gRPC").Base(err)
 		}
 		return encoding.NewMultiHunkConn(grpcService, nil), nil
 	}
 
-	newError("using gRPC tun mode service name: `" + grpcSettings.getServiceName() + "` stream name: `" + grpcSettings.getTunStreamName() + "`").AtDebug().WriteToLog()
+	errors.LogDebug(ctx, "using gRPC tun mode service name: `"+grpcSettings.getServiceName()+"` stream name: `"+grpcSettings.getTunStreamName()+"`")
 	grpcService, err := client.(encoding.GRPCServiceClientX).TunCustomName(ctx, grpcSettings.getServiceName(), grpcSettings.getTunStreamName())
 	if err != nil {
-		return nil, newError("Cannot dial gRPC").Base(err)
+		return nil, errors.New("Cannot dial gRPC").Base(err)
 	}
 
 	return encoding.NewHunkConn(grpcService, nil), nil
@@ -117,29 +119,42 @@ func getGrpcClient(ctx context.Context, dest net.Destination, streamSettings *in
 			}
 			address := net.ParseAddress(rawHost)
 
-			gctx = session.ContextWithID(gctx, session.IDFromContext(ctx))
-			gctx = session.ContextWithOutbound(gctx, session.OutboundFromContext(ctx))
+			gctx = c.ContextWithID(gctx, c.IDFromContext(ctx))
+			gctx = session.ContextWithOutbounds(gctx, session.OutboundsFromContext(ctx))
 			gctx = session.ContextWithTimeoutOnly(gctx, true)
 
 			c, err := internet.DialSystem(gctx, net.TCPDestination(address, port), sockopt)
-			if err == nil && realityConfig != nil {
-				return reality.UClient(c, realityConfig, gctx, dest)
+			if err == nil {
+				if tlsConfig != nil {
+					config := tlsConfig.GetTLSConfig()
+					if config.ServerName == "" && address.Family().IsDomain() {
+						config.ServerName = address.Domain()
+					}
+					if fingerprint := tls.GetFingerprint(tlsConfig.Fingerprint); fingerprint != nil {
+						return tls.UClient(c, config, fingerprint), nil
+					} else { // Fallback to normal gRPC TLS
+						return tls.Client(c, config), nil
+					}
+				}
+				if realityConfig != nil {
+					return reality.UClient(c, realityConfig, gctx, dest)
+				}
 			}
 			return c, err
 		}),
 	}
 
-	if tlsConfig != nil {
-		var transportCredential credentials.TransportCredentials
-		if fingerprint := tls.GetFingerprint(tlsConfig.Fingerprint); fingerprint != nil {
-			transportCredential = tls.NewGrpcUtls(tlsConfig.GetTLSConfig(), fingerprint)
-		} else { // Fallback to normal gRPC TLS
-			transportCredential = credentials.NewTLS(tlsConfig.GetTLSConfig())
-		}
-		dialOptions = append(dialOptions, grpc.WithTransportCredentials(transportCredential))
-	} else {
-		dialOptions = append(dialOptions, grpc.WithInsecure())
+	dialOptions = append(dialOptions, grpc.WithTransportCredentials(insecure.NewCredentials()))
+
+	authority := ""
+	if grpcSettings.Authority != "" {
+		authority = grpcSettings.Authority
+	} else if tlsConfig != nil && tlsConfig.ServerName != "" {
+		authority = tlsConfig.ServerName
+	} else if realityConfig == nil && dest.Address.Family().IsDomain() {
+		authority = dest.Address.Domain()
 	}
+	dialOptions = append(dialOptions, grpc.WithAuthority(authority))
 
 	if grpcSettings.IdleTimeout > 0 || grpcSettings.HealthCheckTimeout > 0 || grpcSettings.PermitWithoutStream {
 		dialOptions = append(dialOptions, grpc.WithKeepaliveParams(keepalive.ClientParameters{

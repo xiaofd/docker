@@ -1,16 +1,18 @@
 package router
 
 import (
+	"context"
 	"regexp"
 	"strings"
 
-	"github.com/xtls/xray-core/common/net"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/features/outbound"
 	"github.com/xtls/xray-core/features/routing"
 )
 
 type Rule struct {
 	Tag       string
+	RuleTag   string
 	Balancer  *Balancer
 	Condition Condition
 }
@@ -35,7 +37,7 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 		case "linear":
 			matcher, err := NewDomainMatcher(rr.Domain)
 			if err != nil {
-				return nil, newError("failed to build domain condition").Base(err)
+				return nil, errors.New("failed to build domain condition").Base(err)
 			}
 			conds.Add(matcher)
 		case "mph", "hybrid":
@@ -43,9 +45,9 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 		default:
 			matcher, err := NewMphMatcherGroup(rr.Domain)
 			if err != nil {
-				return nil, newError("failed to build domain condition with MphDomainMatcher").Base(err)
+				return nil, errors.New("failed to build domain condition with MphDomainMatcher").Base(err)
 			}
-			newError("MphDomainMatcher is enabled for ", len(rr.Domain), " domain rule(s)").AtDebug().WriteToLog()
+			errors.LogDebug(context.Background(), "MphDomainMatcher is enabled for ", len(rr.Domain), " domain rule(s)")
 			conds.Add(matcher)
 		}
 	}
@@ -60,8 +62,6 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 
 	if rr.PortList != nil {
 		conds.Add(NewPortMatcher(rr.PortList, false))
-	} else if rr.PortRange != nil {
-		conds.Add(NewPortMatcher(&net.PortList{Range: []*net.PortRange{rr.PortRange}}, false))
 	}
 
 	if rr.SourcePortList != nil {
@@ -70,8 +70,6 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 
 	if len(rr.Networks) > 0 {
 		conds.Add(NewNetworkMatcher(rr.Networks))
-	} else if rr.NetworkList != nil {
-		conds.Add(NewNetworkMatcher(rr.NetworkList.Network))
 	}
 
 	if len(rr.Geoip) > 0 {
@@ -80,22 +78,10 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 			return nil, err
 		}
 		conds.Add(cond)
-	} else if len(rr.Cidr) > 0 {
-		cond, err := NewMultiGeoIPMatcher([]*GeoIP{{Cidr: rr.Cidr}}, false)
-		if err != nil {
-			return nil, err
-		}
-		conds.Add(cond)
 	}
 
 	if len(rr.SourceGeoip) > 0 {
 		cond, err := NewMultiGeoIPMatcher(rr.SourceGeoip, true)
-		if err != nil {
-			return nil, err
-		}
-		conds.Add(cond)
-	} else if len(rr.SourceCidr) > 0 {
-		cond, err := NewMultiGeoIPMatcher([]*GeoIP{{Cidr: rr.SourceCidr}}, true)
 		if err != nil {
 			return nil, err
 		}
@@ -115,34 +101,55 @@ func (rr *RoutingRule) BuildCondition() (Condition, error) {
 	}
 
 	if conds.Len() == 0 {
-		return nil, newError("this rule has no effective fields").AtWarning()
+		return nil, errors.New("this rule has no effective fields").AtWarning()
 	}
 
 	return conds, nil
 }
 
-func (br *BalancingRule) Build(ohm outbound.Manager) (*Balancer, error) {
-	switch br.Strategy {
-	case "leastPing":
+// Build builds the balancing rule
+func (br *BalancingRule) Build(ohm outbound.Manager, dispatcher routing.Dispatcher) (*Balancer, error) {
+	switch strings.ToLower(br.Strategy) {
+	case "leastping":
 		return &Balancer{
-			selectors: br.OutboundSelector,
-			strategy:  &LeastPingStrategy{},
-			ohm:       ohm,
+			selectors:   br.OutboundSelector,
+			strategy:    &LeastPingStrategy{},
+			fallbackTag: br.FallbackTag,
+			ohm:         ohm,
 		}, nil
-	case "roundRobin":
+	case "roundrobin":
 		return &Balancer{
-			selectors: br.OutboundSelector,
-			strategy:  &RoundRobinStrategy{},
-			ohm:       ohm,
+			selectors:   br.OutboundSelector,
+			strategy:    &RoundRobinStrategy{FallbackTag: br.FallbackTag},
+			fallbackTag: br.FallbackTag,
+			ohm:         ohm,
+		}, nil
+	case "leastload":
+		i, err := br.StrategySettings.GetInstance()
+		if err != nil {
+			return nil, err
+		}
+		s, ok := i.(*StrategyLeastLoadConfig)
+		if !ok {
+			return nil, errors.New("not a StrategyLeastLoadConfig").AtError()
+		}
+		leastLoadStrategy := NewLeastLoadStrategy(s)
+		return &Balancer{
+			selectors:   br.OutboundSelector,
+			ohm:         ohm,
+			fallbackTag: br.FallbackTag,
+			strategy:    leastLoadStrategy,
 		}, nil
 	case "random":
 		fallthrough
-	default:
+	case "":
 		return &Balancer{
-			selectors: br.OutboundSelector,
-			strategy:  &RandomStrategy{},
-			ohm:       ohm,
+			selectors:   br.OutboundSelector,
+			ohm:         ohm,
+			fallbackTag: br.FallbackTag,
+			strategy:    &RandomStrategy{FallbackTag: br.FallbackTag},
 		}, nil
-
+	default:
+		return nil, errors.New("unrecognized balancer type")
 	}
 }

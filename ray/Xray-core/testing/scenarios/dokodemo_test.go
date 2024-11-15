@@ -85,11 +85,9 @@ func TestDokodemoTCP(t *testing.T) {
 						Listen:   net.NewIPOrDomain(net.LocalHostIP),
 					}),
 					ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-						Address: net.NewIPOrDomain(dest.Address),
-						Port:    uint32(dest.Port),
-						NetworkList: &net.NetworkList{
-							Network: []net.Network{net.Network_TCP},
-						},
+						Address:  net.NewIPOrDomain(dest.Address),
+						Port:     uint32(dest.Port),
+						Networks: []net.Network{net.Network_TCP},
 					}),
 				},
 			},
@@ -171,7 +169,7 @@ func TestDokodemoUDP(t *testing.T) {
 	common.Must(err)
 	defer CloseServer(server)
 
-	clientPortRange := uint32(5)
+	clientPortRange := uint32(3)
 	retry := 1
 	clientPort := uint32(udp.PickPort())
 	for {
@@ -183,11 +181,9 @@ func TestDokodemoUDP(t *testing.T) {
 						Listen:   net.NewIPOrDomain(net.LocalHostIP),
 					}),
 					ProxySettings: serial.ToTypedMessage(&dokodemo.Config{
-						Address: net.NewIPOrDomain(dest.Address),
-						Port:    uint32(dest.Port),
-						NetworkList: &net.NetworkList{
-							Network: []net.Network{net.Network_UDP},
-						},
+						Address:  net.NewIPOrDomain(dest.Address),
+						Port:     uint32(dest.Port),
+						Networks: []net.Network{net.Network_UDP},
 					}),
 				},
 			},

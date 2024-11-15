@@ -1,10 +1,14 @@
 package reality
 
 import (
+	"context"
+	"io"
 	"net"
+	"os"
 	"time"
 
 	"github.com/xtls/reality"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/transport/internet"
 )
 
@@ -25,6 +29,8 @@ func (c *Config) GetREALITYConfig() *reality.Config {
 
 		NextProtos:             nil, // should be nil
 		SessionTicketsDisabled: true,
+
+		KeyLogWriter: KeyLogWriterFromConfig(c),
 	}
 	config.ServerNames = make(map[string]bool)
 	for _, serverName := range c.ServerNames {
@@ -35,6 +41,19 @@ func (c *Config) GetREALITYConfig() *reality.Config {
 		config.ShortIds[*(*[8]byte)(shortId)] = true
 	}
 	return config
+}
+
+func KeyLogWriterFromConfig(c *Config) io.Writer {
+	if len(c.MasterKeyLog) <= 0 || c.MasterKeyLog == "none" {
+		return nil
+	}
+
+	writer, err := os.OpenFile(c.MasterKeyLog, os.O_CREATE|os.O_RDWR|os.O_APPEND, 0644)
+	if err != nil {
+		errors.LogErrorInner(context.Background(), err, "failed to open ", c.MasterKeyLog, " as master key log")
+	}
+
+	return writer
 }
 
 func ConfigFromStreamSettings(settings *internet.MemoryStreamConfig) *Config {

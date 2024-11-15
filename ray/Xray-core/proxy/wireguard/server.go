@@ -2,11 +2,12 @@ package wireguard
 
 import (
 	"context"
-	"errors"
+	goerrors "errors"
 	"io"
 
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
+	"github.com/xtls/xray-core/common/errors"
 	"github.com/xtls/xray-core/common/log"
 	"github.com/xtls/xray-core/common/net"
 	"github.com/xtls/xray-core/common/session"
@@ -79,13 +80,15 @@ func (*Server) Network() []net.Network {
 func (s *Server) Process(ctx context.Context, network net.Network, conn stat.Connection, dispatcher routing.Dispatcher) error {
 	inbound := session.InboundFromContext(ctx)
 	inbound.Name = "wireguard"
-	inbound.SetCanSpliceCopy(3)
+	inbound.CanSpliceCopy = 3
+	outbounds := session.OutboundsFromContext(ctx)
+	ob := outbounds[len(outbounds)-1]
 
 	s.info = routingInfo{
 		ctx:         core.ToBackgroundDetachedContext(ctx),
 		dispatcher:  dispatcher,
 		inboundTag:  session.InboundFromContext(ctx),
-		outboundTag: session.OutboundFromContext(ctx),
+		outboundTag: ob,
 		contentTag:  session.ContentFromContext(ctx),
 	}
 
@@ -115,7 +118,7 @@ func (s *Server) Process(ctx context.Context, network net.Network, conn stat.Con
 			v.endpoint = nep
 			v.err = err
 			v.waiter.Done()
-			if err != nil && errors.Is(err, io.EOF) {
+			if err != nil && goerrors.Is(err, io.EOF) {
 				nep.conn = nil
 				return nil
 			}
@@ -125,7 +128,7 @@ func (s *Server) Process(ctx context.Context, network net.Network, conn stat.Con
 
 func (s *Server) forwardConnection(dest net.Destination, conn net.Conn) {
 	if s.info.dispatcher == nil {
-		newError("unexpected: dispatcher == nil").AtError().WriteToLog()
+		errors.LogError(s.info.ctx, "unexpected: dispatcher == nil")
 		return
 	}
 	defer conn.Close()
@@ -145,7 +148,7 @@ func (s *Server) forwardConnection(dest net.Destination, conn net.Conn) {
 		ctx = session.ContextWithInbound(ctx, s.info.inboundTag)
 	}
 	if s.info.outboundTag != nil {
-		ctx = session.ContextWithOutbound(ctx, s.info.outboundTag)
+		ctx = session.ContextWithOutbounds(ctx, []*session.Outbound{s.info.outboundTag})
 	}
 	if s.info.contentTag != nil {
 		ctx = session.ContextWithContent(ctx, s.info.contentTag)
@@ -153,14 +156,14 @@ func (s *Server) forwardConnection(dest net.Destination, conn net.Conn) {
 
 	link, err := s.info.dispatcher.Dispatch(ctx, dest)
 	if err != nil {
-		newError("dispatch connection").Base(err).AtError().WriteToLog()
+		errors.LogErrorInner(s.info.ctx, err, "dispatch connection")
 	}
 	defer cancel()
 
 	requestDone := func() error {
 		defer timer.SetTimeout(plcy.Timeouts.DownlinkOnly)
 		if err := buf.Copy(buf.NewReader(conn), link.Writer, buf.UpdateActivity(timer)); err != nil {
-			return newError("failed to transport all TCP request").Base(err)
+			return errors.New("failed to transport all TCP request").Base(err)
 		}
 
 		return nil
@@ -169,7 +172,7 @@ func (s *Server) forwardConnection(dest net.Destination, conn net.Conn) {
 	responseDone := func() error {
 		defer timer.SetTimeout(plcy.Timeouts.UplinkOnly)
 		if err := buf.Copy(link.Reader, buf.NewWriter(conn), buf.UpdateActivity(timer)); err != nil {
-			return newError("failed to transport all TCP response").Base(err)
+			return errors.New("failed to transport all TCP response").Base(err)
 		}
 
 		return nil
@@ -179,7 +182,7 @@ func (s *Server) forwardConnection(dest net.Destination, conn net.Conn) {
 	if err := task.Run(ctx, requestDonePost, responseDone); err != nil {
 		common.Interrupt(link.Reader)
 		common.Interrupt(link.Writer)
-		newError("connection ends").Base(err).AtDebug().WriteToLog()
+		errors.LogDebugInner(s.info.ctx, err, "connection ends")
 		return
 	}
 }
