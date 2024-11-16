@@ -5,6 +5,7 @@ services:
     hostname: tailscale-nginx
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_EXTRA_ARGS=--accept-dns
       #      - TS_EXTRA_ARGS=--advertise-tags=tag:container
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
@@ -18,9 +19,9 @@ services:
       - sys_module
     container_name: tailscale-nginx
     restart: unless-stopped
-    ports:
-      - "0:41641/udp"
-      - "0:443/tcp"
+      #    ports:
+      #      - "0:41641/udp"
+      #      - "0:443/tcp"
       #    network_mode: host
     networks:
       - netin
