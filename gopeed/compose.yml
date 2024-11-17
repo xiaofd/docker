@@ -1,0 +1,17 @@
+services:
+  gopeed:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "9999:9999"
+    networks:
+      - netin
+    command: >
+      sh -c "chown -R 1000:1000 /app && su - duser -c '/app/gopeed'"
+    volumes:
+      - /DATA/Storage_1/Downloads:/app/Downloads
+      - ${HOME}/APP/gopeed:/app/storage
+networks:
+  netin:
+    external: true
