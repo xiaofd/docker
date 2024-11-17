@@ -5,10 +5,12 @@ FROM alpine:latest
 RUN apk add --no-cache bash curl wget unzip
 
 # 创建一个与宿主机 UID 和 GID 相同的用户（假设 UID 和 GID 都是 1000）
-RUN addgroup -g 1000 dgroup && \
-    adduser -u 1000 -G dgroup -D duser && \
+ARG PUID=1000
+ARG PGID=1000
+RUN addgroup -g $PGID dgroup && \
+    adduser -u $PUID -G dgroup -D duser && \
     mkdir /app && \
-    chown -R 1000:1000 /app
+    chown -R $PUID:$PGID /app 
 
 # 切换到这个用户
 # USER duser
@@ -20,6 +22,8 @@ RUN wget -O gopeed.zip $(wget -qO- https://api.github.com/repos/GopeedLab/gopeed
     && chmod +x gopeed 
 
 EXPOSE 9999
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD curl -f http://localhost:9999 || exit 1
 
 # 默认启动命令
 #CMD ["sleep","1000000"]
