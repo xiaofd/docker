@@ -7,7 +7,8 @@ import (
 
 func main() {
 	http.HandleFunc("/", HelloServer)
-	http.ListenAndServeTLS("localhost:60003", "/etc/xray/xray.crt", "/etc/xray/xray.key", nil)
+	http.ListenAndServe("localhost:60003", nil)
+	//http.ListenAndServeTLS("localhost:60003", "/etc/xray/xray.crt", "/etc/xray/xray.key", nil)
 }
 
 func HelloServer(w http.ResponseWriter, r *http.Request) {

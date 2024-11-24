@@ -9,6 +9,8 @@ mkdir -p "$xray_conf_dir"
 && wget -O "$xray_conf_dir"/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat \
 && wget -O "$xray_conf_dir"/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
 [[ ! -f "$xray_conf_dir"/config.json ]] && cp /bin/config.json "$xray_conf_dir"/ && config_new="true"
+echo "0 12 * * * wget -O ${xray_conf_dir}/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat" >> /etc/crontabs/root
+echo "10 12 * * * wget -O ${xray_conf_dir}/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat" >> /etc/crontabs/root
 
 # qrencode -l H 参数 可以纠错，生成图片稍大
 # qrencode -o- -l H "12345645gsdfgsdfsdf" -t UTF8
@@ -72,5 +74,6 @@ echo "vless://${UUID}@www.csgo.com:${PORT}?path=%2F${WS_PATH_WITHOUT_SLASH}&secu
 echo "vless://${UUID}@www.csgo.com:${PORT}?path=%2F${WS_PATH_WITHOUT_SLASH}&security=tls&encryption=none&host=${DOMAIN}&fp=random&type=ws&sni=${DOMAIN}#WS_TLS-${DOMAIN}" | qrencode -o- -t UTF8
 
 #"$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
-/bin/xray --config "$xray_conf_dir"/config.json
-/bin/sh
+#/bin/xray --config "$xray_conf_dir"/config.json
+#/bin/sh
+crontab -l

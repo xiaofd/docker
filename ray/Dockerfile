@@ -31,12 +31,21 @@ FROM alpine
 COPY --from=builda /bin/xray /bin/xray
 COPY --from=buildb /bin/xray /bin/xrayb
 COPY --from=build /src/hello /bin/hello
+COPY supervisord.conf /etc/supervisord.conf
 VOLUME /etc/xray
 ENV TZ=Asia/Shanghai
 #CMD [ "/bin/xray", "-config", "/etc/xray/config.json" ]
 COPY run.sh /bin/
 COPY config.json /bin/
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    supervisor \
+    cronie \
+    && rm -rf /var/cache/apk/* \
+    && chmod +x /bin/run.sh
 ENV CF_Token=""
 ENV CF_Domain=""
 ENV XRAY_Port="443"
-CMD ["/bin/sh","/bin/run.sh"] 
+CMD ["/bin/sh","-c","/bin/run.sh && supervisord -c /etc/supervisord.conf"]
+#CMD ["/bin/sh","/bin/run.sh"] 
