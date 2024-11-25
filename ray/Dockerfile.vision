@@ -1,0 +1,29 @@
+# build local
+# docker build -f Dockerfile -t xiaofd/ray  --network=host .
+# multiplatform
+# docker buildx create --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 --use 
+# docker buildx build -f Dockerfile -t xiaofd/ray --platform linux/amd64,linux/386,linux/arm64,linux/arm/v6,linux/arm/v7 -o type=registry .
+
+FROM --platform= xiaofd/ray:base AS buildb
+FROM --platform= xiaofd/ray:base-alpine AS builda
+FROM alpine
+COPY --from=builda /bin/xray /bin/xray
+COPY --from=buildb /bin/xray /bin/xrayb
+COPY supervisord.conf /etc/supervisord.conf
+VOLUME /etc/xray
+ENV TZ=Asia/Shanghai
+COPY vision-run.sh /bin/run.sh
+COPY vision-reality-without-stolen.json /bin/config.json
+RUN apk update && apk add --no-cache \
+    bash \
+    curl \
+    supervisor \
+    cronie \
+    && rm -rf /var/cache/apk/* \
+    && chmod +x /bin/run.sh
+ENV CF_Domain=""
+ENV XRAY_Port="443"
+ENV DESTURL="music.apple.com"
+
+CMD ["/bin/sh","-c","/bin/run.sh && supervisord -c /etc/supervisord.conf"]
+#CMD ["/bin/sh","/bin/run.sh"] 
