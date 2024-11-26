@@ -1,0 +1,14 @@
+services:
+  kylinos:
+    image: kylinos
+    platform: linux/arm64
+    container_name: kylinos
+    stdin_open: true  # 等价于 -i
+    tty: true         # 等价于 -t
+    command: sh
+    networks:
+        - netin
+networks:
+    netin:
+        external: true
+
