@@ -7,8 +7,8 @@ services:
     tty: true         # 等价于 -t
     command: sh
     networks:
-        - netin
+        - netout
 networks:
-    netin:
+    netout:
         external: true
 
