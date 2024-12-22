@@ -43,7 +43,7 @@ echo "vless://$UUID@$DOMAIN:$PORT?security=reality&flow=xtls-rprx-vision&fp=chro
 else
 echo "URL 链接 (VLESS + Vision + Reality)"
 echo "vless://$UUID@$DOMAIN4:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
-echo "vless://$UUID@$DOMAIN6:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
+echo "vless://$UUID@[$DOMAIN6]:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
 fi
 
 #"$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
