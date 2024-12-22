@@ -1,6 +1,7 @@
 #/bin/hello&
 [[ -z $CF_Domain ]] && echo -n "Enter Domain:" && read CF_Domain
 [[ -z $CF_Token ]] && echo -n "CF_Token:" && read CF_Token
+[[ -z $XRAY_Port ]] && echo -n "XRAY_Port:" && read XRAY_Port
 PORT="$XRAY_Port"
 
 xray_conf_dir="/etc/xray"
@@ -9,6 +10,7 @@ mkdir -p "$xray_conf_dir"
 && wget -O "$xray_conf_dir"/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat \
 && wget -O "$xray_conf_dir"/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
 [[ ! -f "$xray_conf_dir"/config.json ]] && cp /bin/config.json "$xray_conf_dir"/ && config_new="true"
+echo 'MAILTO=""' >> /etc/crontabs/root
 echo "0 12 * * * wget -O ${xray_conf_dir}/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat" >> /etc/crontabs/root
 echo "10 12 * * * wget -O ${xray_conf_dir}/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat" >> /etc/crontabs/root
 

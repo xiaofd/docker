@@ -10,6 +10,7 @@ mkdir -p "$xray_conf_dir"
 && wget -O "$xray_conf_dir"/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat \
 && wget -O "$xray_conf_dir"/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat
 [[ ! -f "$xray_conf_dir"/config.json ]] && cp /bin/config.json "$xray_conf_dir"/ && config_new="true"
+echo 'MAILTO=""' >> /etc/crontabs/root
 echo "0 12 * * * wget -O ${xray_conf_dir}/geosite.dat https://github.com/v2fly/domain-list-community/releases/latest/download/dlc.dat" >> /etc/crontabs/root
 echo "10 12 * * * wget -O ${xray_conf_dir}/geoip.dat https://github.com/v2fly/geoip/releases/latest/download/geoip.dat" >> /etc/crontabs/root
 
@@ -36,8 +37,14 @@ DOMAIN=${CF_Domain}
 DOMAIN4=$(curl -4 ipv4.ip.sb)
 DOMAIN6=$(curl -6 ipv6.ip.sb)
 
+if [[ -n "$DOMAIN" ]];then
+echo "URL 链接 (VLESS + Vision + Reality)"
+echo "vless://$UUID@$DOMAIN:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
+else
 echo "URL 链接 (VLESS + Vision + Reality)"
 echo "vless://$UUID@$DOMAIN4:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
+echo "vless://$UUID@$DOMAIN6:$PORT?security=reality&flow=xtls-rprx-vision&fp=chrome&pbk=$PUBKEY&sni=$DESTURL&spx=%2F&sid=#VLESS-XTLS-uTLS-REALITY"
+fi
 
 #"$xray_conf_dir"/xray --config "$xray_conf_dir"/config.json
 #/bin/xray --config "$xray_conf_dir"/config.json
