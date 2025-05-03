@@ -3,10 +3,8 @@ package splithttp_test
 import (
 	"context"
 	"crypto/rand"
-	gotls "crypto/tls"
 	"fmt"
 	"io"
-	gonet "net"
 	"net/http"
 	"runtime"
 	"testing"
@@ -23,12 +21,11 @@ import (
 	. "github.com/xtls/xray-core/transport/internet/splithttp"
 	"github.com/xtls/xray-core/transport/internet/stat"
 	"github.com/xtls/xray-core/transport/internet/tls"
-	"golang.org/x/net/http2"
 )
 
-func Test_listenSHAndDial(t *testing.T) {
+func Test_ListenXHAndDial(t *testing.T) {
 	listenPort := tcp.PickPort()
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
 		ProtocolName: "splithttp",
 		ProtocolSettings: &Config{
 			Path: "/sh",
@@ -85,7 +82,7 @@ func Test_listenSHAndDial(t *testing.T) {
 
 func TestDialWithRemoteAddr(t *testing.T) {
 	listenPort := tcp.PickPort()
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
 		ProtocolName: "splithttp",
 		ProtocolSettings: &Config{
 			Path: "sh",
@@ -109,7 +106,7 @@ func TestDialWithRemoteAddr(t *testing.T) {
 
 	conn, err := Dial(context.Background(), net.TCPDestination(net.DomainAddress("localhost"), listenPort), &internet.MemoryStreamConfig{
 		ProtocolName:     "splithttp",
-		ProtocolSettings: &Config{Path: "sh", Header: map[string]string{"X-Forwarded-For": "1.1.1.1"}},
+		ProtocolSettings: &Config{Path: "sh", Headers: map[string]string{"X-Forwarded-For": "1.1.1.1"}},
 	})
 
 	common.Must(err)
@@ -125,7 +122,7 @@ func TestDialWithRemoteAddr(t *testing.T) {
 	common.Must(listen.Close())
 }
 
-func Test_listenSHAndDial_TLS(t *testing.T) {
+func Test_ListenXHAndDial_TLS(t *testing.T) {
 	if runtime.GOARCH == "arm64" {
 		return
 	}
@@ -145,7 +142,7 @@ func Test_listenSHAndDial_TLS(t *testing.T) {
 			Certificate:   []*tls.Certificate{tls.ParseCertificate(cert.MustGenerate(nil, cert.CommonName("localhost")))},
 		},
 	}
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
 		go func() {
 			defer conn.Close()
 
@@ -180,7 +177,7 @@ func Test_listenSHAndDial_TLS(t *testing.T) {
 	}
 }
 
-func Test_listenSHAndDial_H2C(t *testing.T) {
+func Test_ListenXHAndDial_H2C(t *testing.T) {
 	if runtime.GOARCH == "arm64" {
 		return
 	}
@@ -193,7 +190,7 @@ func Test_listenSHAndDial_H2C(t *testing.T) {
 			Path: "shs",
 		},
 	}
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
 		go func() {
 			_ = conn.Close()
 		}()
@@ -201,17 +198,11 @@ func Test_listenSHAndDial_H2C(t *testing.T) {
 	common.Must(err)
 	defer listen.Close()
 
+	protocols := new(http.Protocols)
+	protocols.SetUnencryptedHTTP2(true)
 	client := http.Client{
-		Transport: &http2.Transport{
-			// So http2.Transport doesn't complain the URL scheme isn't 'https'
-			AllowHTTP: true,
-			// even with AllowHTTP, http2.Transport will attempt to establish
-			// the connection using DialTLSContext. Disable TLS with custom
-			// dial context.
-			DialTLSContext: func(ctx context.Context, network, addr string, cfg *gotls.Config) (gonet.Conn, error) {
-				var d gonet.Dialer
-				return d.DialContext(ctx, network, addr)
-			},
+		Transport: &http.Transport{
+			Protocols: protocols,
 		},
 	}
 
@@ -227,7 +218,7 @@ func Test_listenSHAndDial_H2C(t *testing.T) {
 	}
 }
 
-func Test_listenSHAndDial_QUIC(t *testing.T) {
+func Test_ListenXHAndDial_QUIC(t *testing.T) {
 	if runtime.GOARCH == "arm64" {
 		return
 	}
@@ -250,7 +241,7 @@ func Test_listenSHAndDial_QUIC(t *testing.T) {
 	}
 
 	serverClosed := false
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
 		go func() {
 			defer conn.Close()
 
@@ -309,11 +300,11 @@ func Test_listenSHAndDial_QUIC(t *testing.T) {
 	}
 }
 
-func Test_listenSHAndDial_Unix(t *testing.T) {
+func Test_ListenXHAndDial_Unix(t *testing.T) {
 	tempDir := t.TempDir()
 	tempSocket := tempDir + "/server.sock"
 
-	listen, err := ListenSH(context.Background(), net.DomainAddress(tempSocket), 0, &internet.MemoryStreamConfig{
+	listen, err := ListenXH(context.Background(), net.DomainAddress(tempSocket), 0, &internet.MemoryStreamConfig{
 		ProtocolName: "splithttp",
 		ProtocolSettings: &Config{
 			Path: "/sh",
@@ -373,7 +364,7 @@ func Test_listenSHAndDial_Unix(t *testing.T) {
 
 func Test_queryString(t *testing.T) {
 	listenPort := tcp.PickPort()
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, &internet.MemoryStreamConfig{
 		ProtocolName: "splithttp",
 		ProtocolSettings: &Config{
 			// this querystring does not have any effect, but sometimes people blindly copy it from websocket config. make sure the outbound doesn't break
@@ -423,18 +414,18 @@ func Test_maxUpload(t *testing.T) {
 		ProtocolName: "splithttp",
 		ProtocolSettings: &Config{
 			Path: "/sh",
-			ScMaxEachPostBytes: &RandRangeConfig{
-				From: 100,
-				To:   100,
+			ScMaxEachPostBytes: &RangeConfig{
+				From: 10000,
+				To:   10000,
 			},
 		},
 	}
 
 	var uploadSize int
-	listen, err := ListenSH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
+	listen, err := ListenXH(context.Background(), net.LocalHostIP, listenPort, streamSettings, func(conn stat.Connection) {
 		go func(c stat.Connection) {
 			defer c.Close()
-			var b [1024]byte
+			var b [10240]byte
 			c.SetReadDeadline(time.Now().Add(2 * time.Second))
 			n, err := c.Read(b[:])
 			if err != nil {
@@ -452,11 +443,11 @@ func Test_maxUpload(t *testing.T) {
 	conn, err := Dial(ctx, net.TCPDestination(net.DomainAddress("localhost"), listenPort), streamSettings)
 
 	// send a slightly too large upload
-	var upload [101]byte
+	var upload [10001]byte
 	_, err = conn.Write(upload[:])
 	common.Must(err)
 
-	var b [1024]byte
+	var b [10240]byte
 	n, _ := io.ReadFull(conn, b[:])
 	fmt.Println("string is", n)
 	if string(b[:n]) != "Response" {
@@ -464,7 +455,7 @@ func Test_maxUpload(t *testing.T) {
 	}
 	common.Must(conn.Close())
 
-	if uploadSize > 100 || uploadSize == 0 {
+	if uploadSize > 10000 || uploadSize == 0 {
 		t.Error("incorrect upload size: ", uploadSize)
 	}
 
