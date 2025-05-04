@@ -2,11 +2,12 @@ version: "3.7"
 services:
   tailscale-nginx:
     image: tailscale/tailscale:latest
-    hostname: tailscale-nginx
+    hostname: homi
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
       - TS_EXTRA_ARGS=--accept-dns
       #      - TS_EXTRA_ARGS=--advertise-tags=tag:container
+      - TS_EXTRA_ARGS=--advertise-routes=192.168.0.0/24 --accept-routes
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
       #      - TS_ROUTES=192.168.1.0/24,192.168.2.0/24
@@ -25,13 +26,13 @@ services:
     network_mode: host
       #    networks:
       #      - netin
-  nginx:
-    image: nginx
+      # nginx:
+      #image: nginx
       #    networks:
       #      - netin
-    depends_on: 
-      - tailscale-nginx
-    network_mode: service:tailscale-nginx
+      #depends_on: 
+      #- tailscale-nginx
+      #network_mode: service:tailscale-nginx
       #networks:
       #  netin:
       #    external: true
