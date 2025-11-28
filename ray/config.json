@@ -9,14 +9,14 @@
     // 1. TCP 主入口 (Vision + 网站回落 + WS分流)
     // ==========================================
     {
-      "tag": "vless-vision-in", // 建议加上 tag 方便区分
+      "tag": "vless-vision-in",
       "port": xx-port,          // 保持你原本的端口变量
       "protocol": "vless",
       "settings": {
         "clients": [
           {
             "id": "xx-uuid",
-            "flow": "xtls-rprx-vision", // <--- 【关键修改】必须加上这行，否则不是 Vision 模式，只是普通 TCP
+            "flow": "xtls-rprx-vision",
             "level": 0,
             "email": "love@example.com"
           }
@@ -32,7 +32,7 @@
           // 策略 B: 默认回落到你的网站服务 (60003)
           {
             "dest": 60003,
-            "xver": 0 // 假设你的网站服务不需要 ProxyProtocol，填 0
+            "xver": 0
           }
         ]
       },
@@ -40,9 +40,9 @@
         "network": "tcp",
         "security": "tls",
         "tlsSettings": {
-          "rejectUnknownSni": true, // 建议开启，拒绝非法域名连接
+          "rejectUnknownSni": true,
           "alpn": [
-            "h2",       // <--- 【建议添加】增加 h2 伪装更像浏览器，Vision 会自动处理
+            "h2",
             "http/1.1"
           ],
           "certificates": [
@@ -55,44 +55,15 @@
       },
       "sniffing": {
         "enabled": true,
-        "destOverride": ["http", "tls"]
+        "destOverride": [
+          "http",
+          "tls"
+        ]
       }
     },
 
     // ==========================================
-    // 2. UDP 入口 (新增 Hysteria 2 共存)
-    // ==========================================
-    {
-      "tag": "hysteria2-in",
-      "port": xx-port,          // <--- 【关键】端口必须与上面 TCP 一致
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "xx-uuid",    // 保持 ID 一致
-            "email": "hy2_user"
-          }
-        ],
-        "decryption": "none"
-      },
-      "streamSettings": {
-        "network": "hysteria2", // <--- 指定协议为 Hy2
-        "security": "tls",
-        "tlsSettings": {
-          "certificates": [
-            {
-              // 复用完全相同的证书路径
-              "certificateFile": "/etc/xray/xray.crt",
-              "keyFile": "/etc/xray/xray.key"
-            }
-          ],
-          "alpn": ["h3"]        // <--- 【关键】Hy2 必须指定 h3
-        }
-      }
-    },
-
-    // ==========================================
-    // 3. WS 回落接收口 (保持你原有的)
+    // 2. WS 回落接收口 (仅本地监听)
     // ==========================================
     {
       "tag": "vless-ws-in",
