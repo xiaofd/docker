@@ -5,9 +5,10 @@ services:
     hostname: homi
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
-      - TS_EXTRA_ARGS=--accept-dns
+#      - TS_EXTRA_ARGS=--accept-dns
       #      - TS_EXTRA_ARGS=--advertise-tags=tag:container
-      - TS_EXTRA_ARGS=--advertise-routes=192.168.0.0/24 --accept-routes
+      #      - TS_EXTRA_ARGS=--advertise-routes=192.168.0.0/24 --accept-routes
+      - TS_EXTRA_ARGS=--advertise-routes=192.168.0.0/24 --accept-routes --accept-dns
       - TS_STATE_DIR=/var/lib/tailscale
       - TS_USERSPACE=false
       #      - TS_ROUTES=192.168.1.0/24,192.168.2.0/24
