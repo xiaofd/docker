@@ -1,0 +1,48 @@
+version: "3.8"
+
+services:
+  # -------------------------------------------------------
+  # 1. 业务服务：可道云 (Kodbox)
+  # -------------------------------------------------------
+  kodbox:
+    image: kodcloud/kodbox
+    container_name: kodbox
+    restart: unless-stopped
+    user: "33:1000"
+    volumes:
+      # 数据持久化：将上传的文件保存在当前目录下的 kodbox_data 文件夹
+      - /DATA/Storage_1/Downloads/kodbox_data:/var/www/html
+    networks:
+      - tailscale_bridge
+    # 【关键安全设置】
+    # 不配置 ports，这意味着除了同一网络下的 Tailscale，
+    # 宿主机和其他局域网设备都无法访问它。
+
+  # -------------------------------------------------------
+  # 2. 网关服务：Tailscale
+  # -------------------------------------------------------
+  tailscale:
+    image: tailscale/tailscale:latest
+    container_name: tailscale-gateway
+    hostname: kod  # <--- 这将是你的机器名，访问地址为 https://my-cloud.xxx.ts.net
+    environment:
+      - TS_AUTHKEY=${TS_AUTHKEY}
+      - TS_STATE_DIR=/var/lib/tailscale
+      - TS_USERSPACE=false         # 开启内核态模式，提升吞吐量
+      - TS_EXTRA_ARGS=--accept-dns # 允许使用 MagicDNS
+    volumes:
+      - ${HOME}/APP/tailscale_bridge_state:/var/lib/tailscale # 持久化身份数据
+      - /dev/net/tun:/dev/net/tun            # 映射 TUN 设备 (内核态必须)
+    cap_add:
+      - net_admin    # 网络管理权限 (修改路由表/防火墙)
+      # - sys_module # 已移除：通常不需要加载内核模块权限，移除更安全
+    networks:
+      - tailscale_bridge
+    restart: unless-stopped
+
+# -------------------------------------------------------
+# 网络定义：内部隔离桥接网络
+# -------------------------------------------------------
+networks:
+  tailscale_bridge:
+    driver: bridge
