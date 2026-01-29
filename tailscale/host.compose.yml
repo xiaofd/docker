@@ -2,7 +2,7 @@ version: "3.7"
 services:
   tailscale-nginx:
     image: tailscale/tailscale:latest
-    hostname: homi
+    hostname: dvir
     environment:
       - TS_AUTHKEY=${TS_AUTHKEY}
 #      - TS_EXTRA_ARGS=--accept-dns
